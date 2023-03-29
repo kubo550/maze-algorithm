@@ -1,14 +1,37 @@
+var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
 var grid = [];
 var tileSize = 40;
 var cols;
 var rows;
 var current;
+var walls = [];
 var stack = [];
+var player;
+function createWallsOnMazeAlgorithm() {
+    var _a;
+    while (true) {
+        current.isVisited = true;
+        var next = current.checkNeighbors();
+        if (next) {
+            next.isVisited = true;
+            stack.push(current);
+            _a = removeWalls(current, next), current = _a[0], next = _a[1];
+            current = next;
+        }
+        else if (stack.length > 0) {
+            current = stack.pop();
+        }
+        else {
+            return createWallsBasedOnGrid(grid);
+        }
+    }
+}
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
-    createCanvas(400, 400);
+    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     cols = width / tileSize;
     rows = height / tileSize;
+    player = new Tank(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30, 'red');
     for (var y = 0; y < rows; y++) {
         for (var x = 0; x < cols; x++) {
             var cell = new Cell(x, y);
@@ -16,27 +39,153 @@ function setup() {
         }
     }
     current = random(grid);
+    walls = createWallsOnMazeAlgorithm();
 }
 function draw() {
-    var _a;
     background(51);
-    grid.forEach(function (cell) { return cell.show(); });
-    current.isVisited = true;
-    var next = current.checkNeighbors();
-    if (next) {
-        next.isVisited = true;
-        stack.push(current);
-        _a = removeWalls(current, next), current = _a[0], next = _a[1];
-        current = next;
+    walls.forEach(function (wall) { return wall.show(); });
+    player.show();
+    player.update();
+}
+var Tank = (function () {
+    function Tank(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.pos = createVector(x, y);
+        this.vel = createVector(0, 0);
+        this.acc = createVector(0, 0);
+        this.width = 20;
+        this.height = 30;
+        this.rotation = 0;
+        this.bullets = [];
+        this.bulletLimit = 5;
     }
-    else if (stack.length > 0) {
-        current = stack.pop();
+    Tank.prototype.show = function () {
+        push();
+        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
+        rotate(this.rotation);
+        fill(this.color);
+        rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        pop();
+    };
+    Tank.prototype.moveForward = function () {
+        this.acc.add(p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(0.1));
+    };
+    Tank.prototype.update = function () {
+        this.vel.add(this.acc);
+        this.pos.add(this.vel);
+        this.acc.mult(0);
+        this.bullets.forEach(function (bullet) {
+            bullet.update();
+        });
+        this.bullets = this.bullets.filter(function (bullet) { return !bullet.isDead(); });
+        console.log(this.bullets.length);
+    };
+    Tank.prototype.shoot = function () {
+        if (this.bullets.length < this.bulletLimit) {
+            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+        }
+    };
+    return Tank;
+}());
+function keyPressed() {
+    if (keyCode === UP_ARROW) {
+        player.moveForward();
     }
-    else {
-        console.log("done");
-        console.log(grid);
+    if (keyCode === LEFT_ARROW) {
+        player.rotation -= 0.1;
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.rotation += 0.1;
+    }
+    if (keyCode === 32) {
+        player.shoot();
     }
 }
+var Bullet = (function () {
+    function Bullet(x, y, color, rotation) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.rotation = rotation;
+        this.pos = createVector(x, y);
+        this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(5);
+        this.lifespan = 255;
+    }
+    Bullet.prototype.show = function () {
+        push();
+        translate(this.pos.x, this.pos.y);
+        rotate(this.rotation);
+        fill(this.color);
+        ellipse(0, 0, 5, 5);
+        pop();
+    };
+    Bullet.prototype.update = function () {
+        this.show();
+        this.pos.add(this.vel);
+        if (this.checkWallCollision(walls)) {
+            console.log('hit');
+            this.vel.mult(-1);
+        }
+        this.lifespan -= 5;
+        if (this.isDead()) {
+            this.pop();
+        }
+    };
+    Bullet.prototype.isDead = function () {
+        return this.lifespan < 0;
+    };
+    Bullet.prototype.pop = function () {
+        console.log('pop');
+    };
+    Bullet.prototype.checkWallCollision = function (walls) {
+        var _this = this;
+        return walls.some(function (wall) {
+            return wall.isPointInside(_this.pos.x, _this.pos.y);
+        });
+    };
+    return Bullet;
+}());
+function createWallsBasedOnGrid(grid) {
+    var walls = [];
+    grid.forEach(function (cell) {
+        var x = cell.x * tileSize;
+        var y = cell.y * tileSize;
+        if (cell.walls[0]) {
+            walls.push(new Wall(x, y, tileSize, 1, 'pink'));
+        }
+        if (cell.walls[1]) {
+            walls.push(new Wall(x + tileSize, y, 1, tileSize, 'pink'));
+        }
+        if (cell.walls[2]) {
+            walls.push(new Wall(x, y + tileSize, tileSize, 1, 'pink'));
+        }
+        if (cell.walls[3]) {
+            walls.push(new Wall(x, y, 1, tileSize, 'pink'));
+        }
+    });
+    return walls;
+}
+var Wall = (function () {
+    function Wall(x, y, width, height, color) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.color = color;
+    }
+    Wall.prototype.show = function () {
+        push();
+        fill('#fff');
+        rect(this.x, this.y, this.width, this.height);
+        pop();
+    };
+    Wall.prototype.isPointInside = function (x, y) {
+        return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
+    };
+    return Wall;
+}());
 var Cell = (function () {
     function Cell(x, y) {
         this.x = x;
