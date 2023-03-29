@@ -1,93 +1,129 @@
-var ColorHelper = (function () {
-    function ColorHelper() {
-    }
-    ColorHelper.getColorVector = function (c) {
-        return createVector(red(c), green(c), blue(c));
-    };
-    ColorHelper.rainbowColorBase = function () {
-        return [
-            color('red'),
-            color('orange'),
-            color('yellow'),
-            color('green'),
-            color(38, 58, 150),
-            color('indigo'),
-            color('violet')
-        ];
-    };
-    ColorHelper.getColorsArray = function (total, baseColorArray) {
-        var _this = this;
-        if (baseColorArray === void 0) { baseColorArray = null; }
-        if (baseColorArray == null) {
-            baseColorArray = ColorHelper.rainbowColorBase();
-        }
-        var rainbowColors = baseColorArray.map(function (x) { return _this.getColorVector(x); });
-        ;
-        var colours = new Array();
-        for (var i = 0; i < total; i++) {
-            var colorPosition = i / total;
-            var scaledColorPosition = colorPosition * (rainbowColors.length - 1);
-            var colorIndex = Math.floor(scaledColorPosition);
-            var colorPercentage = scaledColorPosition - colorIndex;
-            var nameColor = this.getColorByPercentage(rainbowColors[colorIndex], rainbowColors[colorIndex + 1], colorPercentage);
-            colours.push(color(nameColor.x, nameColor.y, nameColor.z));
-        }
-        return colours;
-    };
-    ColorHelper.getColorByPercentage = function (firstColor, secondColor, percentage) {
-        var firstColorCopy = firstColor.copy();
-        var secondColorCopy = secondColor.copy();
-        var deltaColor = secondColorCopy.sub(firstColorCopy);
-        var scaledDeltaColor = deltaColor.mult(percentage);
-        return firstColorCopy.add(scaledDeltaColor);
-    };
-    return ColorHelper;
-}());
-var PolygonHelper = (function () {
-    function PolygonHelper() {
-    }
-    PolygonHelper.draw = function (numberOfSides, width) {
-        push();
-        var angle = TWO_PI / numberOfSides;
-        var radius = width / 2;
-        beginShape();
-        for (var a = 0; a < TWO_PI; a += angle) {
-            var sx = cos(a) * radius;
-            var sy = sin(a) * radius;
-            vertex(sx, sy);
-        }
-        endShape(CLOSE);
-        pop();
-    };
-    return PolygonHelper;
-}());
-var numberOfShapesControl;
+var grid = [];
+var tileSize = 40;
+var cols;
+var rows;
+var current;
+var stack = [];
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
-    createCanvas(windowWidth, windowHeight);
-    rectMode(CENTER).noFill().frameRate(30);
-    numberOfShapesControl = createSlider(1, 30, 15, 1).position(10, 10).style("width", "100px");
-}
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
+    createCanvas(400, 400);
+    cols = width / tileSize;
+    rows = height / tileSize;
+    for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+            var cell = new Cell(x, y);
+            grid.push(cell);
+        }
+    }
+    current = random(grid);
 }
 function draw() {
-    background(0);
-    translate(width / 2, height / 2);
-    var numberOfShapes = numberOfShapesControl.value();
-    var colours = ColorHelper.getColorsArray(numberOfShapes);
-    var speed = (frameCount / (numberOfShapes * 30)) * 2;
-    for (var i = 0; i < numberOfShapes; i++) {
-        push();
-        var lineWidth = 8;
-        var spin = speed * (numberOfShapes - i);
-        var numberOfSides = 3 + i;
-        var width_1 = 40 * i;
-        strokeWeight(lineWidth);
-        stroke(colours[i]);
-        rotate(spin);
-        PolygonHelper.draw(numberOfSides, width_1);
-        pop();
+    var _a;
+    background(51);
+    grid.forEach(function (cell) { return cell.show(); });
+    current.isVisited = true;
+    var next = current.checkNeighbors();
+    if (next) {
+        next.isVisited = true;
+        stack.push(current);
+        _a = removeWalls(current, next), current = _a[0], next = _a[1];
+        current = next;
     }
+    else if (stack.length > 0) {
+        current = stack.pop();
+    }
+    else {
+        console.log("done");
+        console.log(grid);
+    }
+}
+var Cell = (function () {
+    function Cell(x, y) {
+        this.x = x;
+        this.y = y;
+        this.walls = [true, true, true, true];
+        this.isVisited = false;
+    }
+    Cell.prototype.show = function () {
+        var x = this.x * tileSize;
+        var y = this.y * tileSize;
+        stroke(255);
+        if (this.walls[0]) {
+            line(x, y, x + tileSize, y);
+        }
+        if (this.walls[1]) {
+            line(x + tileSize, y, x + tileSize, y + tileSize);
+        }
+        if (this.walls[2]) {
+            line(x + tileSize, y + tileSize, x, y + tileSize);
+        }
+        if (this.walls[3]) {
+            line(x, y + tileSize, x, y);
+        }
+        if (this.isVisited) {
+            noStroke();
+            fill(255, 0, 255, 100);
+            rect(x, y, tileSize, tileSize);
+        }
+        if (this === current) {
+            noStroke();
+            fill(0, 255, 0, 100);
+            rect(x, y, tileSize, tileSize);
+        }
+    };
+    Cell.prototype.checkNeighbors = function () {
+        var neighbors = [];
+        var top = grid[index(this.x, this.y - 1)];
+        var right = grid[index(this.x + 1, this.y)];
+        var bottom = grid[index(this.x, this.y + 1)];
+        var left = grid[index(this.x - 1, this.y)];
+        if (top && !top.isVisited) {
+            neighbors.push(top);
+        }
+        if (right && !right.isVisited) {
+            neighbors.push(right);
+        }
+        if (bottom && !bottom.isVisited) {
+            neighbors.push(bottom);
+        }
+        if (left && !left.isVisited) {
+            neighbors.push(left);
+        }
+        if (neighbors.length > 0) {
+            var r = floor(random(0, neighbors.length));
+            return neighbors[r];
+        }
+        else {
+            return undefined;
+        }
+    };
+    return Cell;
+}());
+function index(x, y) {
+    if (x < 0 || y < 0 || x > cols - 1 || y > rows - 1) {
+        return -1;
+    }
+    return x + y * cols;
+}
+function removeWalls(current, next) {
+    var x = current.x - next.x;
+    if (x === 1) {
+        current.walls[3] = false;
+        next.walls[1] = false;
+    }
+    else if (x === -1) {
+        current.walls[1] = false;
+        next.walls[3] = false;
+    }
+    var y = current.y - next.y;
+    if (y === 1) {
+        current.walls[0] = false;
+        next.walls[2] = false;
+    }
+    else if (y === -1) {
+        current.walls[2] = false;
+        next.walls[0] = false;
+    }
+    return [current, next];
 }
 //# sourceMappingURL=build.js.map
