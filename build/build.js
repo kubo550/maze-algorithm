@@ -1,3 +1,82 @@
+var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
+var grid = [];
+var tileSize = 40;
+var cols;
+var rows;
+var current;
+var walls = [];
+var stack = [];
+var player;
+function createWallsOnMazeAlgorithm() {
+    var _a;
+    while (true) {
+        current.isVisited = true;
+        var next = current.checkNeighbors();
+        if (next) {
+            next.isVisited = true;
+            stack.push(current);
+            _a = removeWalls(current, next), current = _a[0], next = _a[1];
+            current = next;
+        }
+        else if (stack.length > 0) {
+            current = stack.pop();
+        }
+        else {
+            return createWallsBasedOnGrid(grid);
+        }
+    }
+}
+function setup() {
+    console.log("🚀 - Setup initialized - P5 is running");
+    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    cols = width / tileSize;
+    rows = height / tileSize;
+    player = new Tank(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30, 'red');
+    for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+            var cell = new Cell(x, y);
+            grid.push(cell);
+        }
+    }
+    current = random(grid);
+    walls = createWallsOnMazeAlgorithm();
+}
+function draw() {
+    background(51);
+    walls.forEach(function (wall) { return wall.show(); });
+    player.update();
+}
+function keyPressed() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({ up: true });
+    }
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({ left: true });
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({ right: true });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: true });
+    }
+    if (keyCode === 32) {
+        player.shoot();
+    }
+}
+function keyReleased() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({ up: false });
+    }
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({ left: false });
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({ right: false });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: false });
+    }
+}
 var Bullet = (function () {
     function Bullet(x, y, color, rotation) {
         this.x = x;
@@ -50,64 +129,15 @@ var Bullet = (function () {
     };
     return Bullet;
 }());
-var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
-var grid = [];
-var tileSize = 40;
-var cols;
-var rows;
-var current;
-var walls = [];
-var stack = [];
-var player;
-function createWallsOnMazeAlgorithm() {
-    var _a;
-    while (true) {
-        current.isVisited = true;
-        var next = current.checkNeighbors();
-        if (next) {
-            next.isVisited = true;
-            stack.push(current);
-            _a = removeWalls(current, next), current = _a[0], next = _a[1];
-            current = next;
-        }
-        else if (stack.length > 0) {
-            current = stack.pop();
-        }
-        else {
-            return createWallsBasedOnGrid(grid);
-        }
-    }
-}
-function setup() {
-    console.log("🚀 - Setup initialized - P5 is running");
-    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-    cols = width / tileSize;
-    rows = height / tileSize;
-    player = new Tank(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30, 'red');
-    for (var y = 0; y < rows; y++) {
-        for (var x = 0; x < cols; x++) {
-            var cell = new Cell(x, y);
-            grid.push(cell);
-        }
-    }
-    current = random(grid);
-    walls = createWallsOnMazeAlgorithm();
-}
-function draw() {
-    background(51);
-    walls.forEach(function (wall) { return wall.show(); });
-    player.show();
-    player.update();
-}
 var Tank = (function () {
     function Tank(x, y, color) {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.rotateSpeed = 0.05;
+        this.rotateSpeed = 0.03;
+        this.speed = 0.75;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
-        this.acc = createVector(0, 0);
         this.movingController = new MovingControls();
         this.width = 15;
         this.height = 20;
@@ -125,15 +155,16 @@ var Tank = (function () {
     };
     Tank.prototype.moveForward = function (dir) {
         if (dir === void 0) { dir = 1; }
-        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(dir);
+        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
         this.pos.add(this.vel);
     };
     Tank.prototype.update = function () {
+        this.show();
         if (this.movingController.up) {
             this.moveForward();
         }
         if (this.movingController.down) {
-            this.moveForward(-1);
+            this.moveForward(-0.5);
         }
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
@@ -187,37 +218,6 @@ var MovingControls = (function () {
     };
     return MovingControls;
 }());
-function keyPressed() {
-    if (keyCode === UP_ARROW) {
-        player.movingController.setControls({ up: true });
-    }
-    if (keyCode === LEFT_ARROW) {
-        player.movingController.setControls({ left: true });
-    }
-    if (keyCode === RIGHT_ARROW) {
-        player.movingController.setControls({ right: true });
-    }
-    if (keyCode === DOWN_ARROW) {
-        player.movingController.setControls({ down: true });
-    }
-    if (keyCode === 32) {
-        player.shoot();
-    }
-}
-function keyReleased() {
-    if (keyCode === UP_ARROW) {
-        player.movingController.setControls({ up: false });
-    }
-    if (keyCode === LEFT_ARROW) {
-        player.movingController.setControls({ left: false });
-    }
-    if (keyCode === RIGHT_ARROW) {
-        player.movingController.setControls({ right: false });
-    }
-    if (keyCode === DOWN_ARROW) {
-        player.movingController.setControls({ down: false });
-    }
-}
 function createWallsBasedOnGrid(grid) {
     var walls = [];
     grid.forEach(function (cell) {
