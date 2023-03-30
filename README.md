@@ -116,4 +116,6 @@ See [dblock/p5qr](https://github.com/dblock/p5qr) for a working sample.
 
 ## Copyright and License
 
+
+
 MIT License, see [LICENSE](https://github.com/Gaweph/p5-typescript-starter/blob/master/LICENSE) for details.
