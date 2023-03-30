@@ -101,8 +101,7 @@ var Bullet = (function () {
         this.show();
         this.pos.add(this.vel);
         if (this.checkWallCollision(walls)) {
-            console.log('hit');
-            this.vel.mult(-1);
+            this.vel.x *= -1;
         }
         this.lifespan -= 1;
         if (!this.isAlive()) {
@@ -118,7 +117,7 @@ var Bullet = (function () {
     Bullet.prototype.checkWallCollision = function (walls) {
         var _this = this;
         return walls.some(function (wall) {
-            return wall.isPointInside(_this.pos.x, _this.pos.y);
+            return wall.isColliding(_this.pos, _this.size / 2);
         });
     };
     Bullet.prototype.checkTankCollision = function (tank) {
@@ -187,12 +186,6 @@ var Tank = (function () {
         return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
     };
     Tank.prototype.checkWallCollision = function (walls) {
-        var _this = this;
-        walls.forEach(function (wall) {
-            if (wall.isPointInside(_this.pos.x, _this.pos.y)) {
-                _this.vel.mult(0);
-            }
-        });
     };
     return Tank;
 }());
@@ -252,8 +245,14 @@ var Wall = (function () {
         rect(this.x, this.y, this.width, this.height);
         pop();
     };
-    Wall.prototype.isPointInside = function (x, y) {
-        return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
+    Wall.prototype.isColliding = function (pos, radius) {
+        var x = pos.x;
+        var y = pos.y;
+        var x1 = this.x;
+        var y1 = this.y;
+        var x2 = this.x + this.width;
+        var y2 = this.y + this.height;
+        return x + radius > x1 && x - radius < x2 && y + radius > y1 && y - radius < y2;
     };
     return Wall;
 }());

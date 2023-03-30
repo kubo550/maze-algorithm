@@ -30,8 +30,14 @@ class Wall {
         pop();
     }
 
-    isPointInside(x: number, y: number) {
-        return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
-    }
 
+    isColliding(pos: p5.Vector, radius: number) {
+        const x = pos.x;
+        const y = pos.y;
+        const x1 = this.x;
+        const y1 = this.y;
+        const x2 = this.x + this.width;
+        const y2 = this.y + this.height;
+        return x + radius > x1 && x - radius < x2 && y + radius > y1 && y - radius < y2;
+    }
 }

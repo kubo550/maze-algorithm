@@ -80,11 +80,11 @@ class Tank {
     }
 
     checkWallCollision(walls: Wall[]) {
-        walls.forEach(wall => {
-            if (wall.isPointInside(this.pos.x, this.pos.y)) {
-                this.vel.mult(0);
-            }
-        });
+        // walls.forEach(wall => {
+        //     if (wall.isPointInside(this.pos.x, this.pos.y)) {
+        //         this.vel.mult(0);
+        //     }
+        // });
     }
 }
 

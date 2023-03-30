@@ -26,8 +26,7 @@ class Bullet {
 
         this.pos.add(this.vel);
         if (this.checkWallCollision(walls)) {
-            console.log('hit')
-            this.vel.mult(-1);
+            this.vel.x *= -1;
         }
         this.lifespan -= 1;
         if (!this.isAlive()) {
@@ -45,7 +44,7 @@ class Bullet {
 
     checkWallCollision(walls: Wall[]) {
         return walls.some(wall => {
-            return wall.isPointInside(this.pos.x, this.pos.y);
+            return wall.isColliding(this.pos, this.size/2);
         });
     }
     checkTankCollision(tank: Tank[]) {
