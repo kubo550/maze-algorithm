@@ -30,7 +30,7 @@ class Bullet {
             this.vel.mult(-1);
         }
         this.lifespan -= 1;
-        if (this.isAlive()) {
+        if (!this.isAlive()) {
             this.pop();
         }
     }
@@ -41,7 +41,6 @@ class Bullet {
 
     pop() {
         console.log('pop');
-
     }
 
     checkWallCollision(walls: Wall[]) {

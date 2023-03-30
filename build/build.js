@@ -105,7 +105,7 @@ var Bullet = (function () {
             this.vel.mult(-1);
         }
         this.lifespan -= 1;
-        if (this.isAlive()) {
+        if (!this.isAlive()) {
             this.pop();
         }
     };
