@@ -1,4 +1,5 @@
 // https://www.youtube.com/watch?v=sVcB8vUFlmU
+
 const CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
 const grid: Cell[] = [];
 const tileSize = 40;
@@ -68,6 +69,8 @@ class Tank {
     public vel: p5.Vector;
     public acc: p5.Vector;
 
+    public movingController: MovingControls;
+
     public width: number;
     public height: number;
     public rotation: number;
@@ -81,12 +84,17 @@ class Tank {
         this.vel = createVector(0, 0);
         this.acc = createVector(0, 0);
 
-        this.width = 20;
-        this.height = 30;
+        this.movingController = new MovingControls();
+
+        this.width = 15;
+        this.height = 20;
         this.rotation = 0;
         this.bullets = [];
         this.bulletLimit = 5;
     }
+
+    private readonly rotateSpeed = 0.05;
+
 
     show() {
         push();
@@ -97,93 +105,110 @@ class Tank {
         pop();
     }
 
-    moveForward() {
-        this.acc.add(p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(0.1));
+    moveForward(dir = 1) {
+        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(dir);
+        this.pos.add(this.vel);
     }
 
+
     update() {
-        this.vel.add(this.acc);
-        this.pos.add(this.vel);
-        this.acc.mult(0);
+        if (this.movingController.up) {
+            this.moveForward();
+        }
+        if (this.movingController.down) {
+            this.moveForward(-1);
+        }
+        if (this.movingController.left) {
+            this.rotation -= this.rotateSpeed;
+        }
+        if (this.movingController.right) {
+            this.rotation += this.rotateSpeed;
+        }
 
         this.bullets.forEach(bullet => {
             bullet.update();
         });
-        this.bullets = this.bullets.filter(bullet => !bullet.isDead());
-        console.log(this.bullets.length)
+
+        this.checkWallCollision(walls);
+        this.bullets = this.bullets.filter(bullet => bullet.isAlive());
     }
 
     shoot() {
         if (this.bullets.length < this.bulletLimit) {
             this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
+    }
 
+    isPointInside(x: number, y: number) {
+        return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
+    }
+
+    checkWallCollision(walls: Wall[]) {
+        walls.forEach(wall => {
+            if (wall.isPointInside(this.pos.x, this.pos.y)) {
+                this.vel.mult(0);
+            }
+        });
+    }
+}
+
+class MovingControls {
+    up: boolean;
+    left: boolean;
+    right: boolean;
+    down: boolean;
+
+    constructor() {
+        this.up = false;
+        this.left = false;
+        this.right = false;
+        this.down = false;
+    }
+
+    reset() {
+        this.up = false;
+        this.left = false;
+        this.right = false;
+        this.down = false;
+    }
+
+    setControls({up, left, right, down}: Partial<Pick<MovingControls, 'left' | 'right' | 'up' | 'down'>>) {
+        this.up = up ?? this.up;
+        this.left = left ?? this.left;
+        this.right = right ?? this.right;
+        this.down = down ?? this.down;
     }
 }
 
 function keyPressed() {
     if (keyCode === UP_ARROW) {
-        player.moveForward();
+        player.movingController.setControls({up: true});
     }
     if (keyCode === LEFT_ARROW) {
-        player.rotation -= 0.1;
+        player.movingController.setControls({left: true});
     }
     if (keyCode === RIGHT_ARROW) {
-        player.rotation += 0.1;
+        player.movingController.setControls({right: true});
     }
-
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({down: true});
+    }
     if (keyCode === 32) {
         player.shoot();
     }
 }
 
-
-class Bullet {
-    public pos: p5.Vector;
-    public vel: p5.Vector;
-    public lifespan: number;
-
-    constructor(public x: number, public y: number, public color: string, public rotation: number) {
-        this.pos = createVector(x, y);
-        this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(5);
-        this.lifespan = 255;
+function keyReleased() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({up: false});
     }
-
-    show() {
-        push();
-        translate(this.pos.x, this.pos.y);
-        rotate(this.rotation);
-        fill(this.color);
-        ellipse(0, 0, 5, 5);
-        pop();
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({left: false});
     }
-
-    update() {
-        this.show();
-
-        this.pos.add(this.vel);
-        if (this.checkWallCollision(walls)) {
-            console.log('hit')
-            this.vel.mult(-1);
-        }
-        this.lifespan -= 5;
-        if (this.isDead()) {
-            this.pop();
-        }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({right: false});
     }
-
-    isDead() {
-        return this.lifespan < 0;
-    }
-
-    pop() {
-        console.log('pop');
-
-    }
-
-    checkWallCollision(walls: Wall[]) {
-        return walls.some(wall => {
-            return wall.isPointInside(this.pos.x, this.pos.y);
-        });
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({down: false});
     }
 }

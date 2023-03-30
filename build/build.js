@@ -1,3 +1,55 @@
+var Bullet = (function () {
+    function Bullet(x, y, color, rotation) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.rotation = rotation;
+        this.speed = 1.25;
+        this.size = 8;
+        this.pos = createVector(x, y);
+        this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
+        this.lifespan = 255;
+    }
+    Bullet.prototype.show = function () {
+        push();
+        translate(this.pos.x, this.pos.y);
+        rotate(this.rotation);
+        fill(this.color);
+        ellipse(0, 0, this.size, this.size);
+        pop();
+    };
+    Bullet.prototype.update = function () {
+        this.show();
+        this.pos.add(this.vel);
+        if (this.checkWallCollision(walls)) {
+            console.log('hit');
+            this.vel.mult(-1);
+        }
+        this.lifespan -= 1;
+        if (this.isAlive()) {
+            this.pop();
+        }
+    };
+    Bullet.prototype.isAlive = function () {
+        return this.lifespan >= 0;
+    };
+    Bullet.prototype.pop = function () {
+        console.log('pop');
+    };
+    Bullet.prototype.checkWallCollision = function (walls) {
+        var _this = this;
+        return walls.some(function (wall) {
+            return wall.isPointInside(_this.pos.x, _this.pos.y);
+        });
+    };
+    Bullet.prototype.checkTankCollision = function (tank) {
+        var _this = this;
+        return tank.some(function (tank) {
+            return tank.isPointInside(_this.pos.x, _this.pos.y);
+        });
+    };
+    return Bullet;
+}());
 var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
 var grid = [];
 var tileSize = 40;
@@ -52,11 +104,13 @@ var Tank = (function () {
         this.x = x;
         this.y = y;
         this.color = color;
+        this.rotateSpeed = 0.05;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.acc = createVector(0, 0);
-        this.width = 20;
-        this.height = 30;
+        this.movingController = new MovingControls();
+        this.width = 15;
+        this.height = 20;
         this.rotation = 0;
         this.bullets = [];
         this.bulletLimit = 5;
@@ -69,84 +123,101 @@ var Tank = (function () {
         rect(-this.width / 2, -this.height / 2, this.width, this.height);
         pop();
     };
-    Tank.prototype.moveForward = function () {
-        this.acc.add(p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(0.1));
+    Tank.prototype.moveForward = function (dir) {
+        if (dir === void 0) { dir = 1; }
+        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(dir);
+        this.pos.add(this.vel);
     };
     Tank.prototype.update = function () {
-        this.vel.add(this.acc);
-        this.pos.add(this.vel);
-        this.acc.mult(0);
+        if (this.movingController.up) {
+            this.moveForward();
+        }
+        if (this.movingController.down) {
+            this.moveForward(-1);
+        }
+        if (this.movingController.left) {
+            this.rotation -= this.rotateSpeed;
+        }
+        if (this.movingController.right) {
+            this.rotation += this.rotateSpeed;
+        }
         this.bullets.forEach(function (bullet) {
             bullet.update();
         });
-        this.bullets = this.bullets.filter(function (bullet) { return !bullet.isDead(); });
-        console.log(this.bullets.length);
+        this.checkWallCollision(walls);
+        this.bullets = this.bullets.filter(function (bullet) { return bullet.isAlive(); });
     };
     Tank.prototype.shoot = function () {
         if (this.bullets.length < this.bulletLimit) {
             this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
     };
+    Tank.prototype.isPointInside = function (x, y) {
+        return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
+    };
+    Tank.prototype.checkWallCollision = function (walls) {
+        var _this = this;
+        walls.forEach(function (wall) {
+            if (wall.isPointInside(_this.pos.x, _this.pos.y)) {
+                _this.vel.mult(0);
+            }
+        });
+    };
     return Tank;
+}());
+var MovingControls = (function () {
+    function MovingControls() {
+        this.up = false;
+        this.left = false;
+        this.right = false;
+        this.down = false;
+    }
+    MovingControls.prototype.reset = function () {
+        this.up = false;
+        this.left = false;
+        this.right = false;
+        this.down = false;
+    };
+    MovingControls.prototype.setControls = function (_a) {
+        var up = _a.up, left = _a.left, right = _a.right, down = _a.down;
+        this.up = up !== null && up !== void 0 ? up : this.up;
+        this.left = left !== null && left !== void 0 ? left : this.left;
+        this.right = right !== null && right !== void 0 ? right : this.right;
+        this.down = down !== null && down !== void 0 ? down : this.down;
+    };
+    return MovingControls;
 }());
 function keyPressed() {
     if (keyCode === UP_ARROW) {
-        player.moveForward();
+        player.movingController.setControls({ up: true });
     }
     if (keyCode === LEFT_ARROW) {
-        player.rotation -= 0.1;
+        player.movingController.setControls({ left: true });
     }
     if (keyCode === RIGHT_ARROW) {
-        player.rotation += 0.1;
+        player.movingController.setControls({ right: true });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: true });
     }
     if (keyCode === 32) {
         player.shoot();
     }
 }
-var Bullet = (function () {
-    function Bullet(x, y, color, rotation) {
-        this.x = x;
-        this.y = y;
-        this.color = color;
-        this.rotation = rotation;
-        this.pos = createVector(x, y);
-        this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(5);
-        this.lifespan = 255;
+function keyReleased() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({ up: false });
     }
-    Bullet.prototype.show = function () {
-        push();
-        translate(this.pos.x, this.pos.y);
-        rotate(this.rotation);
-        fill(this.color);
-        ellipse(0, 0, 5, 5);
-        pop();
-    };
-    Bullet.prototype.update = function () {
-        this.show();
-        this.pos.add(this.vel);
-        if (this.checkWallCollision(walls)) {
-            console.log('hit');
-            this.vel.mult(-1);
-        }
-        this.lifespan -= 5;
-        if (this.isDead()) {
-            this.pop();
-        }
-    };
-    Bullet.prototype.isDead = function () {
-        return this.lifespan < 0;
-    };
-    Bullet.prototype.pop = function () {
-        console.log('pop');
-    };
-    Bullet.prototype.checkWallCollision = function (walls) {
-        var _this = this;
-        return walls.some(function (wall) {
-            return wall.isPointInside(_this.pos.x, _this.pos.y);
-        });
-    };
-    return Bullet;
-}());
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({ left: false });
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({ right: false });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: false });
+    }
+}
 function createWallsBasedOnGrid(grid) {
     var walls = [];
     grid.forEach(function (cell) {
