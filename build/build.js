@@ -1,14 +1,14 @@
 var grid = [];
-var tileSize = 40;
+var tileSize = 20;
 var cols;
 var rows;
 var current;
 var stack = [];
 function setup() {
-    console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(400, 400);
     cols = width / tileSize;
     rows = height / tileSize;
+    frameRate(20);
     for (var y = 0; y < rows; y++) {
         for (var x = 0; x < cols; x++) {
             var cell = new Cell(x, y);

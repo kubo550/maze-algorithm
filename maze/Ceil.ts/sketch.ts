@@ -1,6 +1,5 @@
-// https://www.youtube.com/watch?v=sVcB8vUFlmU
 const grid: Cell[] = [];
-const tileSize = 40;
+const tileSize = 20;
 let cols: number;
 let rows: number;
 let current: Cell;
@@ -8,11 +7,11 @@ let current: Cell;
 const stack: Cell[] = [];
 
 function setup() {
-    console.log("🚀 - Setup initialized - P5 is running");
-
     createCanvas(400, 400)
     cols = width / tileSize;
     rows = height / tileSize;
+
+    frameRate(20);
 
 
     for (let y = 0; y < rows; y++) {
@@ -23,10 +22,6 @@ function setup() {
     }
 
     current = random(grid);
-
-    // while (true) {
-    //
-    // }
 
 }
 
