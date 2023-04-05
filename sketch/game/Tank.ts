@@ -11,7 +11,8 @@ class Tank {
 
     public bullets: Bullet[];
     public bulletLimit: number;
-
+    private readonly rotateSpeed = 0.05;
+    private readonly speed = 0.85;
 
     constructor(public x: number, public y: number, public color: string) {
         this.pos = createVector(x, y);
@@ -25,26 +26,6 @@ class Tank {
         this.bullets = [];
         this.bulletLimit = 5;
     }
-
-    private readonly rotateSpeed = 0.03;
-    private readonly speed = 0.75;
-
-
-    private show() {
-        push();
-        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
-        rotate(this.rotation);
-        fill(this.color);
-        rect(-this.width / 2, -this.height / 2, this.width, this.height);
-        pop();
-    }
-
-
-    private moveForward(dir = 1) {
-        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
-        this.pos.add(this.vel);
-    }
-
 
     update() {
         this.show();
@@ -71,7 +52,7 @@ class Tank {
 
     shoot() {
         if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+            this.bullets.push(new Bullet(this.pos.x + this.width / 2, this.pos.y + this.height / 2, this.color, this.rotation));
         }
     }
 
@@ -85,6 +66,20 @@ class Tank {
         //         this.vel.mult(0);
         //     }
         // });
+    }
+
+    private show() {
+        push();
+        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
+        rotate(this.rotation);
+        fill(this.color);
+        rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        pop();
+    }
+
+    private moveForward(dir = 1) {
+        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
+        this.pos.add(this.vel);
     }
 }
 

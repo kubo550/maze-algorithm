@@ -84,7 +84,7 @@ var Bullet = (function () {
         this.color = color;
         this.rotation = rotation;
         this.speed = 1.25;
-        this.size = 8;
+        this.size = 7;
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
         this.lifespan = 255;
@@ -100,10 +100,13 @@ var Bullet = (function () {
     Bullet.prototype.update = function () {
         this.show();
         this.pos.add(this.vel);
-        if (this.checkWallCollision(walls)) {
+        if (this.isCollidingWithWall(walls, 'vertical')) {
+            this.vel.y *= -1;
+        }
+        if (this.isCollidingWithWall(walls, 'horizontal')) {
             this.vel.x *= -1;
         }
-        this.lifespan -= 1;
+        this.lifespan -= 0.5;
         if (!this.isAlive()) {
             this.pop();
         }
@@ -114,16 +117,15 @@ var Bullet = (function () {
     Bullet.prototype.pop = function () {
         console.log('pop');
     };
-    Bullet.prototype.checkWallCollision = function (walls) {
+    Bullet.prototype.isCollidingWithWall = function (walls, direction) {
         var _this = this;
         return walls.some(function (wall) {
-            return wall.isColliding(_this.pos, _this.size / 2);
-        });
-    };
-    Bullet.prototype.checkTankCollision = function (tank) {
-        var _this = this;
-        return tank.some(function (tank) {
-            return tank.isPointInside(_this.pos.x, _this.pos.y);
+            if (direction === 'horizontal') {
+                return wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y) || wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y);
+            }
+            if (direction === 'vertical') {
+                return wall.isPointInside(_this.pos.x, _this.pos.y + _this.size / 2) || wall.isPointInside(_this.pos.x, _this.pos.y - _this.size / 2);
+            }
         });
     };
     return Bullet;
@@ -133,8 +135,8 @@ var Tank = (function () {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.rotateSpeed = 0.03;
-        this.speed = 0.75;
+        this.rotateSpeed = 0.05;
+        this.speed = 0.85;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.movingController = new MovingControls();
@@ -144,19 +146,6 @@ var Tank = (function () {
         this.bullets = [];
         this.bulletLimit = 5;
     }
-    Tank.prototype.show = function () {
-        push();
-        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
-        rotate(this.rotation);
-        fill(this.color);
-        rect(-this.width / 2, -this.height / 2, this.width, this.height);
-        pop();
-    };
-    Tank.prototype.moveForward = function (dir) {
-        if (dir === void 0) { dir = 1; }
-        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
-        this.pos.add(this.vel);
-    };
     Tank.prototype.update = function () {
         this.show();
         if (this.movingController.up) {
@@ -179,13 +168,26 @@ var Tank = (function () {
     };
     Tank.prototype.shoot = function () {
         if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+            this.bullets.push(new Bullet(this.pos.x + this.width / 2, this.pos.y + this.height / 2, this.color, this.rotation));
         }
     };
     Tank.prototype.isPointInside = function (x, y) {
         return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
     };
     Tank.prototype.checkWallCollision = function (walls) {
+    };
+    Tank.prototype.show = function () {
+        push();
+        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
+        rotate(this.rotation);
+        fill(this.color);
+        rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        pop();
+    };
+    Tank.prototype.moveForward = function (dir) {
+        if (dir === void 0) { dir = 1; }
+        this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
+        this.pos.add(this.vel);
     };
     return Tank;
 }());
@@ -253,6 +255,9 @@ var Wall = (function () {
         var x2 = this.x + this.width;
         var y2 = this.y + this.height;
         return x + radius > x1 && x - radius < x2 && y + radius > y1 && y - radius < y2;
+    };
+    Wall.prototype.isPointInside = function (x, y) {
+        return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
     };
     return Wall;
 }());
