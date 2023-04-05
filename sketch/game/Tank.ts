@@ -9,6 +9,8 @@ class Tank {
     public rotation: number;
 
     public bullets: Bullet[];
+    public particles: Particle[];
+
     public bulletLimit: number;
     private readonly rotateSpeed = 0.05;
     private readonly speed = 0.85;
@@ -23,11 +25,11 @@ class Tank {
         this.height = 20;
         this.rotation = 0;
         this.bullets = [];
+        this.particles = [];
         this.bulletLimit = 5;
     }
 
     update() {
-        this.show();
         if (this.movingController.up) {
             this.moveForward();
         }
@@ -44,9 +46,16 @@ class Tank {
         this.bullets.forEach(bullet => {
             bullet.update();
         });
+        this.particles.forEach(particle => {
+            particle.update()
+        });
 
         this.checkWallCollision(walls);
         this.bullets = this.bullets.filter(bullet => bullet.isAlive());
+        this.particles = this.particles.filter(particle => particle.isAlive());
+
+        this.show();
+
     }
 
     shoot() {
@@ -64,6 +73,10 @@ class Tank {
             if (wall.isPolygonInside(this.getPolygon())) {
                 this.pos.sub(this.vel);
                 this.rotation -= this.rotateSpeed;
+                if (random() > 0.75) {
+                    this.showSmokeParticles();
+
+                }
             }
         });
     }
@@ -84,12 +97,17 @@ class Tank {
     }
 
     private getPolygon() {
-        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width /2 , this.pos.y - this.height /2 ), [
+        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
             new SAT.Vector(0, 0),
             new SAT.Vector(this.width + this.width / 2, 0),
             new SAT.Vector(this.width, this.height),
             new SAT.Vector(0, this.height),
         ]);
+    }
+
+    private showSmokeParticles() {
+        const oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8))
+        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector, 'gray'));
     }
 }
 
@@ -100,13 +118,6 @@ class MovingControls {
     down: boolean;
 
     constructor() {
-        this.up = false;
-        this.left = false;
-        this.right = false;
-        this.down = false;
-    }
-
-    reset() {
         this.up = false;
         this.left = false;
         this.right = false;

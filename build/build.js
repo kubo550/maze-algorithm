@@ -53,6 +53,33 @@ var Bullet = (function () {
     };
     return Bullet;
 }());
+var Particle = (function () {
+    function Particle(position, velocity) {
+        this.pos = position;
+        this.vel = velocity;
+        this.acc = createVector(0, 0);
+        this.life = 255;
+        this.lifespan = 255;
+    }
+    Particle.prototype.update = function () {
+        this.show();
+        this.vel.add(this.acc);
+        this.pos.add(this.vel);
+        this.acc.mult(0);
+        this.life -= 5;
+    };
+    Particle.prototype.isAlive = function () {
+        return this.life > 0;
+    };
+    Particle.prototype.show = function () {
+        push();
+        fill(120, 120, 120, this.life / this.lifespan * 200);
+        noStroke();
+        ellipse(this.pos.x, this.pos.y, 5);
+        pop();
+    };
+    return Particle;
+}());
 var Tank = (function () {
     function Tank(x, y, color) {
         this.x = x;
@@ -67,10 +94,10 @@ var Tank = (function () {
         this.height = 20;
         this.rotation = 0;
         this.bullets = [];
+        this.particles = [];
         this.bulletLimit = 5;
     }
     Tank.prototype.update = function () {
-        this.show();
         if (this.movingController.up) {
             this.moveForward();
         }
@@ -86,8 +113,13 @@ var Tank = (function () {
         this.bullets.forEach(function (bullet) {
             bullet.update();
         });
+        this.particles.forEach(function (particle) {
+            particle.update();
+        });
         this.checkWallCollision(walls);
         this.bullets = this.bullets.filter(function (bullet) { return bullet.isAlive(); });
+        this.particles = this.particles.filter(function (particle) { return particle.isAlive(); });
+        this.show();
     };
     Tank.prototype.shoot = function () {
         if (this.bullets.length < this.bulletLimit) {
@@ -103,6 +135,9 @@ var Tank = (function () {
             if (wall.isPolygonInside(_this.getPolygon())) {
                 _this.pos.sub(_this.vel);
                 _this.rotation -= _this.rotateSpeed;
+                if (random() > 0.75) {
+                    _this.showSmokeParticles();
+                }
             }
         });
     };
@@ -128,6 +163,10 @@ var Tank = (function () {
             new SAT.Vector(0, this.height),
         ]);
     };
+    Tank.prototype.showSmokeParticles = function () {
+        var oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8));
+        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector, 'gray'));
+    };
     return Tank;
 }());
 var MovingControls = (function () {
@@ -137,12 +176,6 @@ var MovingControls = (function () {
         this.right = false;
         this.down = false;
     }
-    MovingControls.prototype.reset = function () {
-        this.up = false;
-        this.left = false;
-        this.right = false;
-        this.down = false;
-    };
     MovingControls.prototype.setControls = function (_a) {
         var up = _a.up, left = _a.left, right = _a.right, down = _a.down;
         this.up = up !== null && up !== void 0 ? up : this.up;
