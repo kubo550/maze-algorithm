@@ -3,6 +3,13 @@
 
 This project will quickly get you something working in [p5.js](https://p5js.org/) and [typescript](https://www.typescriptlang.org/).
 
+## Resources
+
+- [Maze Generation Algorithms](https://www.youtube.com/watch?v=HyK_Q5rrcr4)
+- [Collision Detection Between Rotated Rectangles](https://www.youtube.com/watch?v=MvlhMEE9zuc)
+
+
+
 ## Demo
 
 **[Click here for Demo](https://gaweph.github.io/p5-typescript-starter/)**
