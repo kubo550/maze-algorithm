@@ -52,7 +52,7 @@ class Tank {
 
     shoot() {
         if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x + this.width / 2, this.pos.y + this.height / 2, this.color, this.rotation));
+            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
     }
 
@@ -70,10 +70,11 @@ class Tank {
 
     private show() {
         push();
-        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
+        rectMode(CENTER)
+        translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
         fill(this.color);
-        rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        rect(0, 0, this.width, this.height);
         pop();
     }
 

@@ -26,20 +26,26 @@ function createWallsOnMazeAlgorithm() {
         }
     }
 }
+function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
+    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
+    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
+    return { x: x, y: y };
+}
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     cols = width / tileSize;
     rows = height / tileSize;
-    player = new Tank(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30, 'red');
-    for (var y = 0; y < rows; y++) {
-        for (var x = 0; x < cols; x++) {
-            var cell = new Cell(x, y);
+    for (var y_1 = 0; y_1 < rows; y_1++) {
+        for (var x_1 = 0; x_1 < cols; x_1++) {
+            var cell = new Cell(x_1, y_1);
             grid.push(cell);
         }
     }
     current = random(grid);
     walls = createWallsOnMazeAlgorithm();
+    var _a = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize), x = _a.x, y = _a.y;
+    player = new Tank(x, y, 'red');
 }
 function draw() {
     background(51);
@@ -91,9 +97,11 @@ var Bullet = (function () {
     }
     Bullet.prototype.show = function () {
         push();
+        ellipseMode(CENTER);
+        noStroke();
+        fill(this.color);
         translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
-        fill(this.color);
         ellipse(0, 0, this.size, this.size);
         pop();
     };
@@ -168,7 +176,7 @@ var Tank = (function () {
     };
     Tank.prototype.shoot = function () {
         if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x + this.width / 2, this.pos.y + this.height / 2, this.color, this.rotation));
+            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
     };
     Tank.prototype.isPointInside = function (x, y) {
@@ -178,10 +186,11 @@ var Tank = (function () {
     };
     Tank.prototype.show = function () {
         push();
-        translate(this.pos.x + this.width / 2, this.pos.y + this.height / 2);
+        rectMode(CENTER);
+        translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
         fill(this.color);
-        rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        rect(0, 0, this.width, this.height);
         pop();
     };
     Tank.prototype.moveForward = function (dir) {
@@ -246,15 +255,6 @@ var Wall = (function () {
         fill('#fff');
         rect(this.x, this.y, this.width, this.height);
         pop();
-    };
-    Wall.prototype.isColliding = function (pos, radius) {
-        var x = pos.x;
-        var y = pos.y;
-        var x1 = this.x;
-        var y1 = this.y;
-        var x2 = this.x + this.width;
-        var y2 = this.y + this.height;
-        return x + radius > x1 && x - radius < x2 && y + radius > y1 && y - radius < y2;
     };
     Wall.prototype.isPointInside = function (x, y) {
         return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;

@@ -14,11 +14,14 @@ class Bullet {
 
     show() {
         push();
+        ellipseMode(CENTER)
+        noStroke();
+        fill(this.color);
         translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
-        fill(this.color);
         ellipse(0, 0, this.size, this.size);
         pop();
+
     }
 
     update() {

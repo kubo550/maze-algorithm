@@ -30,6 +30,13 @@ function createWallsOnMazeAlgorithm() {
     }
 }
 
+function generateRandomPosition(CANVAS_WIDTH: number, CANVAS_HEIGHT: number, tileSize: number) {
+    const x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2
+    const y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2
+    return {x, y};
+
+}
+
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
 
@@ -37,7 +44,6 @@ function setup() {
     cols = width / tileSize;
     rows = height / tileSize;
 
-    player = new Tank(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 30, 'red');
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -50,6 +56,9 @@ function setup() {
     current = random(grid);
     walls = createWallsOnMazeAlgorithm();
 
+
+    const {x, y} = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize);
+    player = new Tank(x, y, 'red');
 }
 
 
@@ -59,7 +68,6 @@ function draw() {
     walls.forEach(wall => wall.show());
     player.update();
 }
-
 
 
 function keyPressed() {
