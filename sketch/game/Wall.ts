@@ -1,3 +1,4 @@
+
 function createWallsBasedOnGrid(grid: Cell[]) {
     const walls: Wall[] = [];
     grid.forEach(cell => {
@@ -25,12 +26,35 @@ class Wall {
 
     show() {
         push();
-        fill('#fff');
+        noStroke()
+        fill(this.color);
         rect(this.x, this.y, this.width, this.height);
         pop();
     }
 
     isPointInside(x: number, y: number) {
         return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
+    }
+
+    isPolygonInside(otherPolygon: SAT.Polygon) {
+       const itsPolygon = this.getPolygon();
+        const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+        if(testPolygonPolygon) {
+            push();
+            noStroke()
+            fill('red');
+            rect(this.x, this.y, this.width, this.height);
+            pop();
+        }
+        return testPolygonPolygon;
+    }
+
+    private getPolygon() {
+        return new SAT.Polygon(new SAT.Vector(this.x, this.y), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.width, 0),
+            new SAT.Vector(this.width, this.height),
+            new SAT.Vector(0, this.height),
+        ]);
     }
 }

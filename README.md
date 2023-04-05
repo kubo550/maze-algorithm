@@ -103,7 +103,7 @@ To use an external library, e.g. [qrcode-generator](https://www.npmjs.com/packag
    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
    ```
 
-3. Import via `global.d.ts`.
+3. Import via `p5.d.ts`.
 
    ```typescript
    import qrcode = require('qrcode-generator');

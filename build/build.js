@@ -1,88 +1,3 @@
-var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
-var grid = [];
-var tileSize = 40;
-var cols;
-var rows;
-var current;
-var walls = [];
-var stack = [];
-var player;
-function createWallsOnMazeAlgorithm() {
-    var _a;
-    while (true) {
-        current.isVisited = true;
-        var next = current.checkNeighbors();
-        if (next) {
-            next.isVisited = true;
-            stack.push(current);
-            _a = removeWalls(current, next), current = _a[0], next = _a[1];
-            current = next;
-        }
-        else if (stack.length > 0) {
-            current = stack.pop();
-        }
-        else {
-            return createWallsBasedOnGrid(grid);
-        }
-    }
-}
-function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
-    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
-    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
-    return { x: x, y: y };
-}
-function setup() {
-    console.log("🚀 - Setup initialized - P5 is running");
-    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-    cols = width / tileSize;
-    rows = height / tileSize;
-    for (var y_1 = 0; y_1 < rows; y_1++) {
-        for (var x_1 = 0; x_1 < cols; x_1++) {
-            var cell = new Cell(x_1, y_1);
-            grid.push(cell);
-        }
-    }
-    current = random(grid);
-    walls = createWallsOnMazeAlgorithm();
-    var _a = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize), x = _a.x, y = _a.y;
-    player = new Tank(x, y, 'red');
-}
-function draw() {
-    background(51);
-    walls.forEach(function (wall) { return wall.show(); });
-    player.update();
-}
-function keyPressed() {
-    if (keyCode === UP_ARROW) {
-        player.movingController.setControls({ up: true });
-    }
-    if (keyCode === LEFT_ARROW) {
-        player.movingController.setControls({ left: true });
-    }
-    if (keyCode === RIGHT_ARROW) {
-        player.movingController.setControls({ right: true });
-    }
-    if (keyCode === DOWN_ARROW) {
-        player.movingController.setControls({ down: true });
-    }
-    if (keyCode === 32) {
-        player.shoot();
-    }
-}
-function keyReleased() {
-    if (keyCode === UP_ARROW) {
-        player.movingController.setControls({ up: false });
-    }
-    if (keyCode === LEFT_ARROW) {
-        player.movingController.setControls({ left: false });
-    }
-    if (keyCode === RIGHT_ARROW) {
-        player.movingController.setControls({ right: false });
-    }
-    if (keyCode === DOWN_ARROW) {
-        player.movingController.setControls({ down: false });
-    }
-}
 var Bullet = (function () {
     function Bullet(x, y, color, rotation) {
         this.x = x;
@@ -183,6 +98,13 @@ var Tank = (function () {
         return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
     };
     Tank.prototype.checkWallCollision = function (walls) {
+        var _this = this;
+        walls.forEach(function (wall) {
+            if (wall.isPolygonInside(_this.getPolygon())) {
+                _this.pos.sub(_this.vel);
+                _this.rotation -= _this.rotateSpeed;
+            }
+        });
     };
     Tank.prototype.show = function () {
         push();
@@ -197,6 +119,14 @@ var Tank = (function () {
         if (dir === void 0) { dir = 1; }
         this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
         this.pos.add(this.vel);
+    };
+    Tank.prototype.getPolygon = function () {
+        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.width + this.width / 2, 0),
+            new SAT.Vector(this.width, this.height),
+            new SAT.Vector(0, this.height),
+        ]);
     };
     return Tank;
 }());
@@ -252,15 +182,121 @@ var Wall = (function () {
     }
     Wall.prototype.show = function () {
         push();
-        fill('#fff');
+        noStroke();
+        fill(this.color);
         rect(this.x, this.y, this.width, this.height);
         pop();
     };
     Wall.prototype.isPointInside = function (x, y) {
         return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
     };
+    Wall.prototype.isPolygonInside = function (otherPolygon) {
+        var itsPolygon = this.getPolygon();
+        var testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+        if (testPolygonPolygon) {
+            push();
+            noStroke();
+            fill('red');
+            rect(this.x, this.y, this.width, this.height);
+            pop();
+        }
+        return testPolygonPolygon;
+    };
+    Wall.prototype.getPolygon = function () {
+        return new SAT.Polygon(new SAT.Vector(this.x, this.y), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.width, 0),
+            new SAT.Vector(this.width, this.height),
+            new SAT.Vector(0, this.height),
+        ]);
+    };
     return Wall;
 }());
+var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
+var grid = [];
+var tileSize = 40;
+var cols;
+var rows;
+var current;
+var walls = [];
+var stack = [];
+var player;
+function createWallsOnMazeAlgorithm() {
+    var _a;
+    while (true) {
+        current.isVisited = true;
+        var next = current.checkNeighbors();
+        if (next) {
+            next.isVisited = true;
+            stack.push(current);
+            _a = removeWalls(current, next), current = _a[0], next = _a[1];
+            current = next;
+        }
+        else if (stack.length > 0) {
+            current = stack.pop();
+        }
+        else {
+            return createWallsBasedOnGrid(grid);
+        }
+    }
+}
+function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
+    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
+    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
+    return { x: x, y: y };
+}
+function setup() {
+    console.log("🚀 - Setup initialized - P5 is running");
+    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    cols = width / tileSize;
+    rows = height / tileSize;
+    for (var y_1 = 0; y_1 < rows; y_1++) {
+        for (var x_1 = 0; x_1 < cols; x_1++) {
+            var cell = new Cell(x_1, y_1);
+            grid.push(cell);
+        }
+    }
+    current = random(grid);
+    walls = createWallsOnMazeAlgorithm();
+    var _a = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize), x = _a.x, y = _a.y;
+    player = new Tank(x, y, 'red');
+}
+function draw() {
+    background(51);
+    walls.forEach(function (wall) { return wall.show(); });
+    player.update();
+}
+function keyPressed() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({ up: true });
+    }
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({ left: true });
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({ right: true });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: true });
+    }
+    if (keyCode === 32) {
+        player.shoot();
+    }
+}
+function keyReleased() {
+    if (keyCode === UP_ARROW) {
+        player.movingController.setControls({ up: false });
+    }
+    if (keyCode === LEFT_ARROW) {
+        player.movingController.setControls({ left: false });
+    }
+    if (keyCode === RIGHT_ARROW) {
+        player.movingController.setControls({ right: false });
+    }
+    if (keyCode === DOWN_ARROW) {
+        player.movingController.setControls({ down: false });
+    }
+}
 var Cell = (function () {
     function Cell(x, y) {
         this.x = x;

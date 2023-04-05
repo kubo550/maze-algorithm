@@ -1,5 +1,4 @@
 class Tank {
-
     public pos: p5.Vector;
     public vel: p5.Vector;
 
@@ -61,11 +60,12 @@ class Tank {
     }
 
     checkWallCollision(walls: Wall[]) {
-        // walls.forEach(wall => {
-        //     if (wall.isPointInside(this.pos.x, this.pos.y)) {
-        //         this.vel.mult(0);
-        //     }
-        // });
+        walls.forEach(wall => {
+            if (wall.isPolygonInside(this.getPolygon())) {
+                this.pos.sub(this.vel);
+                this.rotation -= this.rotateSpeed;
+            }
+        });
     }
 
     private show() {
@@ -81,6 +81,15 @@ class Tank {
     private moveForward(dir = 1) {
         this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
         this.pos.add(this.vel);
+    }
+
+    private getPolygon() {
+        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width /2 , this.pos.y - this.height /2 ), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.width + this.width / 2, 0),
+            new SAT.Vector(this.width, this.height),
+            new SAT.Vector(0, this.height),
+        ]);
     }
 }
 
