@@ -12,8 +12,8 @@ class Tank {
     public particles: Particle[];
 
     public bulletLimit: number;
-    private readonly rotateSpeed = 0.05;
-    private readonly speed = 0.85;
+    private readonly rotateSpeed = 0.07;
+    private readonly speed = 0.95;
 
     constructor(public x: number, public y: number, public color: string) {
         this.pos = createVector(x, y);
@@ -34,7 +34,7 @@ class Tank {
             this.moveForward();
         }
         if (this.movingController.down) {
-            this.moveForward(-0.5);
+            this.moveForward(-this.speed / 2);
         }
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
@@ -72,10 +72,15 @@ class Tank {
         walls.forEach(wall => {
             if (wall.isPolygonInside(this.getPolygon())) {
                 this.pos.sub(this.vel);
-                this.rotation -= this.rotateSpeed;
+
+                this.rotation -= this.rotateSpeed / 2;
+
+
+
+
+
                 if (random() > 0.75) {
                     this.showSmokeParticles();
-
                 }
             }
         });
@@ -88,6 +93,9 @@ class Tank {
         rotate(this.rotation);
         fill(this.color);
         rect(0, 0, this.width, this.height);
+        fill(0);
+        rect(0, -this.height / 3, 5, 8);
+
         pop();
     }
 
@@ -107,7 +115,7 @@ class Tank {
 
     private showSmokeParticles() {
         const oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8))
-        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector, 'gray'));
+        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
     }
 }
 
@@ -130,4 +138,8 @@ class MovingControls {
         this.right = right ?? this.right;
         this.down = down ?? this.down;
     }
+}
+
+function radiansToDegrees(radians: number) {
+    return radians * 180 / Math.PI;
 }

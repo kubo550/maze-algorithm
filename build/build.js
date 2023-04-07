@@ -4,8 +4,8 @@ var Bullet = (function () {
         this.y = y;
         this.color = color;
         this.rotation = rotation;
-        this.speed = 1.25;
-        this.size = 7;
+        this.speed = 1.45;
+        this.size = 5.5;
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
         this.lifespan = 255;
@@ -85,8 +85,8 @@ var Tank = (function () {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.rotateSpeed = 0.05;
-        this.speed = 0.85;
+        this.rotateSpeed = 0.07;
+        this.speed = 0.95;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.movingController = new MovingControls();
@@ -102,7 +102,7 @@ var Tank = (function () {
             this.moveForward();
         }
         if (this.movingController.down) {
-            this.moveForward(-0.5);
+            this.moveForward(-this.speed / 2);
         }
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
@@ -134,7 +134,7 @@ var Tank = (function () {
         walls.forEach(function (wall) {
             if (wall.isPolygonInside(_this.getPolygon())) {
                 _this.pos.sub(_this.vel);
-                _this.rotation -= _this.rotateSpeed;
+                _this.rotation -= _this.rotateSpeed / 2;
                 if (random() > 0.75) {
                     _this.showSmokeParticles();
                 }
@@ -148,6 +148,8 @@ var Tank = (function () {
         rotate(this.rotation);
         fill(this.color);
         rect(0, 0, this.width, this.height);
+        fill(0);
+        rect(0, -this.height / 3, 5, 8);
         pop();
     };
     Tank.prototype.moveForward = function (dir) {
@@ -165,7 +167,7 @@ var Tank = (function () {
     };
     Tank.prototype.showSmokeParticles = function () {
         var oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8));
-        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector, 'gray'));
+        this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
     };
     return Tank;
 }());
@@ -185,6 +187,9 @@ var MovingControls = (function () {
     };
     return MovingControls;
 }());
+function radiansToDegrees(radians) {
+    return radians * 180 / Math.PI;
+}
 function createWallsBasedOnGrid(grid) {
     var walls = [];
     grid.forEach(function (cell) {
