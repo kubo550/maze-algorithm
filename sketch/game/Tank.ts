@@ -12,8 +12,8 @@ class Tank {
     public particles: Particle[];
 
     private readonly bulletLimit: number;
-    private readonly rotateSpeed = 0.14;
-    private readonly speed = 1.95;
+    private readonly rotateSpeed = 0.09;
+    private readonly speed = 1.3;
 
     constructor(public x: number, public y: number, public color: string) {
         this.pos = createVector(x, y);
@@ -26,7 +26,7 @@ class Tank {
         this.rotation = 0;
         this.bullets = [];
         this.particles = [];
-        this.bulletLimit = 900;
+        this.bulletLimit = 10;
     }
 
     update() {

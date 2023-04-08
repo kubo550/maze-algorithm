@@ -3,7 +3,7 @@ class Bullet {
     public vel: p5.Vector;
     public lifespan: number;
 
-    private readonly speed = 3.45;
+    private readonly speed = 2.45;
     private readonly size = 5;
 
     constructor(public x: number, public y: number, public color: string, public rotation: number) {
@@ -28,6 +28,9 @@ class Bullet {
         this.show();
 
         this.pos.add(this.vel);
+        if (this.isCollidingwithWall(walls)) {
+            console.log('colliding with wall');
+        }
         if (this.isCollidingWithWall(walls, 'vertical')) {
             this.vel.y *= -1;
         }
@@ -60,5 +63,14 @@ class Bullet {
 
         });
 
+    }
+
+    private isCollidingwithWall(walls: Wall[]) {
+        return walls.some(wall => {
+            return wall.isPointInside(this.pos.x + this.size / 2, this.pos.y + this.size / 2) ||
+                wall.isPointInside(this.pos.x - this.size / 2, this.pos.y + this.size / 2) ||
+                wall.isPointInside(this.pos.x + this.size / 2, this.pos.y - this.size / 2) ||
+                wall.isPointInside(this.pos.x - this.size / 2, this.pos.y - this.size / 2);
+        });
     }
 }

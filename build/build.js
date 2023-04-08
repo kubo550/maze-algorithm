@@ -4,7 +4,7 @@ var Bullet = (function () {
         this.y = y;
         this.color = color;
         this.rotation = rotation;
-        this.speed = 3.45;
+        this.speed = 2.45;
         this.size = 5;
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
@@ -23,6 +23,9 @@ var Bullet = (function () {
     Bullet.prototype.update = function () {
         this.show();
         this.pos.add(this.vel);
+        if (this.isCollidingwithWall(walls)) {
+            console.log('colliding with wall');
+        }
         if (this.isCollidingWithWall(walls, 'vertical')) {
             this.vel.y *= -1;
         }
@@ -49,6 +52,15 @@ var Bullet = (function () {
             if (direction === 'vertical') {
                 return wall.isPointInside(_this.pos.x, _this.pos.y + _this.size / 2) || wall.isPointInside(_this.pos.x, _this.pos.y - _this.size / 2);
             }
+        });
+    };
+    Bullet.prototype.isCollidingwithWall = function (walls) {
+        var _this = this;
+        return walls.some(function (wall) {
+            return wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y + _this.size / 2) ||
+                wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y + _this.size / 2) ||
+                wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y - _this.size / 2) ||
+                wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y - _this.size / 2);
         });
     };
     return Bullet;
@@ -85,8 +97,8 @@ var Tank = (function () {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.rotateSpeed = 0.14;
-        this.speed = 1.95;
+        this.rotateSpeed = 0.09;
+        this.speed = 1.3;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.movingController = new MovingControls();
@@ -95,7 +107,7 @@ var Tank = (function () {
         this.rotation = 0;
         this.bullets = [];
         this.particles = [];
-        this.bulletLimit = 900;
+        this.bulletLimit = 10;
     }
     Tank.prototype.update = function () {
         if (this.movingController.up) {
