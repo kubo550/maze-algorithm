@@ -11,9 +11,9 @@ class Tank {
     public bullets: Bullet[];
     public particles: Particle[];
 
-    public bulletLimit: number;
-    private readonly rotateSpeed = 0.07;
-    private readonly speed = 0.95;
+    private readonly bulletLimit: number;
+    private readonly rotateSpeed = 0.14;
+    private readonly speed = 1.95;
 
     constructor(public x: number, public y: number, public color: string) {
         this.pos = createVector(x, y);
@@ -26,7 +26,7 @@ class Tank {
         this.rotation = 0;
         this.bullets = [];
         this.particles = [];
-        this.bulletLimit = 5;
+        this.bulletLimit = 900;
     }
 
     update() {
@@ -107,7 +107,7 @@ class Tank {
     private getPolygon() {
         return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
             new SAT.Vector(0, 0),
-            new SAT.Vector(this.width + this.width / 2, 0),
+            new SAT.Vector(this.width / 2 , 0),
             new SAT.Vector(this.width, this.height),
             new SAT.Vector(0, this.height),
         ]);

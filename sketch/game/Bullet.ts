@@ -3,8 +3,8 @@ class Bullet {
     public vel: p5.Vector;
     public lifespan: number;
 
-    private readonly speed = 1.45;
-    private readonly size = 5.5;
+    private readonly speed = 3.45;
+    private readonly size = 5;
 
     constructor(public x: number, public y: number, public color: string, public rotation: number) {
         this.pos = createVector(x, y);

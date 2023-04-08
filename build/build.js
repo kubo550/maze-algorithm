@@ -4,8 +4,8 @@ var Bullet = (function () {
         this.y = y;
         this.color = color;
         this.rotation = rotation;
-        this.speed = 1.45;
-        this.size = 5.5;
+        this.speed = 3.45;
+        this.size = 5;
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
         this.lifespan = 255;
@@ -85,8 +85,8 @@ var Tank = (function () {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.rotateSpeed = 0.07;
-        this.speed = 0.95;
+        this.rotateSpeed = 0.14;
+        this.speed = 1.95;
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.movingController = new MovingControls();
@@ -95,7 +95,7 @@ var Tank = (function () {
         this.rotation = 0;
         this.bullets = [];
         this.particles = [];
-        this.bulletLimit = 5;
+        this.bulletLimit = 900;
     }
     Tank.prototype.update = function () {
         if (this.movingController.up) {
@@ -160,7 +160,7 @@ var Tank = (function () {
     Tank.prototype.getPolygon = function () {
         return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
             new SAT.Vector(0, 0),
-            new SAT.Vector(this.width + this.width / 2, 0),
+            new SAT.Vector(this.width / 2, 0),
             new SAT.Vector(this.width, this.height),
             new SAT.Vector(0, this.height),
         ]);
