@@ -8,14 +8,14 @@ function setup() {
     createCanvas(400, 400);
     cols = width / tileSize;
     rows = height / tileSize;
-    frameRate(20);
+    frameRate(1);
     for (var y = 0; y < rows; y++) {
         for (var x = 0; x < cols; x++) {
             var cell = new Cell(x, y);
             grid.push(cell);
         }
     }
-    current = random(grid);
+    current = grid[0];
 }
 function draw() {
     var _a;

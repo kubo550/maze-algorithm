@@ -11,7 +11,7 @@ function setup() {
     cols = width / tileSize;
     rows = height / tileSize;
 
-    frameRate(20);
+    frameRate(1);
 
 
     for (let y = 0; y < rows; y++) {
@@ -21,7 +21,7 @@ function setup() {
         }
     }
 
-    current = random(grid);
+    current = grid[0];
 
 }
 
