@@ -1,20 +1,21 @@
-
 function createWallsBasedOnGrid(grid: Cell[]) {
     const walls: Wall[] = [];
     grid.forEach(cell => {
         const x = cell.x * tileSize;
         const y = cell.y * tileSize;
+        const wallSize = 3;
+        const color = 'gray';
         if (cell.walls[0]) {
-            walls.push(new Wall(x, y, tileSize, 1, 'pink'));
+            walls.push(new Wall(x, y, tileSize, wallSize, color));
         }
         if (cell.walls[1]) {
-            walls.push(new Wall(x + tileSize, y, 1, tileSize, 'pink'));
+            walls.push(new Wall(x + tileSize, y, wallSize, tileSize, color));
         }
         if (cell.walls[2]) {
-            walls.push(new Wall(x, y + tileSize, tileSize, 1, 'pink'));
+            walls.push(new Wall(x, y + tileSize, tileSize, wallSize, color));
         }
         if (cell.walls[3]) {
-            walls.push(new Wall(x, y, 1, tileSize, 'pink'));
+            walls.push(new Wall(x, y, wallSize, tileSize, color));
         }
     });
     return walls;
@@ -22,9 +23,10 @@ function createWallsBasedOnGrid(grid: Cell[]) {
 
 class Wall {
 
-    constructor(public x: number, public y: number, public width: number, public height: number, public color: string) {}
+    constructor(public x: number, public y: number, public width: number, public height: number, public color: string) {
+    }
 
-    show() {
+    public show() {
         push();
         noStroke()
         fill(this.color);
@@ -32,17 +34,14 @@ class Wall {
         pop();
     }
 
-    isPointInside(x: number, y: number) {
-        return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
-    }
+    public isPolygonInside(otherPolygon: SAT.Polygon) {
+        const itsPolygon = this.getPolygon();
 
-    isPolygonInside(otherPolygon: SAT.Polygon) {
-       const itsPolygon = this.getPolygon();
         const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
-        if(testPolygonPolygon) {
+        if (testPolygonPolygon) {
             push();
             noStroke()
-            fill('red');
+            fill('pink');
             rect(this.x, this.y, this.width, this.height);
             pop();
         }
@@ -56,5 +55,8 @@ class Wall {
             new SAT.Vector(this.width, this.height),
             new SAT.Vector(0, this.height),
         ]);
+    }
+    public toString() {
+        return 'wall'
     }
 }

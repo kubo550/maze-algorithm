@@ -8,7 +8,6 @@ class Tank {
     public height: number;
     public rotation: number;
 
-    public bullets: Bullet[];
     public particles: Particle[];
 
     private readonly bulletLimit: number;
@@ -23,10 +22,9 @@ class Tank {
 
         this.width = 15;
         this.height = 20;
-        this.rotation = 0;
-        this.bullets = [];
+        this.rotation = random(TWO_PI)
         this.particles = [];
-        this.bulletLimit = 10;
+        this.bulletLimit = 100;
     }
 
     update() {
@@ -43,15 +41,11 @@ class Tank {
             this.rotation += this.rotateSpeed;
         }
 
-        this.bullets.forEach(bullet => {
-            bullet.update();
-        });
         this.particles.forEach(particle => {
             particle.update()
         });
 
         this.checkWallCollision(walls);
-        this.bullets = this.bullets.filter(bullet => bullet.isAlive());
         this.particles = this.particles.filter(particle => particle.isAlive());
 
         this.show();
@@ -59,13 +53,10 @@ class Tank {
     }
 
     shoot() {
-        if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+        // todo: this is a bug
+        if (bullets.length < this.bulletLimit) {
+            bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
-    }
-
-    isPointInside(x: number, y: number) {
-        return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
     }
 
     checkWallCollision(walls: Wall[]) {
@@ -74,10 +65,6 @@ class Tank {
                 this.pos.sub(this.vel);
 
                 this.rotation -= this.rotateSpeed / 2;
-
-
-
-
 
                 if (random() > 0.75) {
                     this.showSmokeParticles();
@@ -95,7 +82,6 @@ class Tank {
         rect(0, 0, this.width, this.height);
         fill(0);
         rect(0, -this.height / 3, 5, 8);
-
         pop();
     }
 
@@ -117,6 +103,26 @@ class Tank {
         const oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8))
         this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
     }
+
+    public isPolygonInside(otherPolygon: SAT.Polygon) {
+        const itsPolygon = this.getPolygon();
+
+        const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+        if (testPolygonPolygon) {
+            push();
+            rectMode(CENTER)
+            translate(this.pos.x, this.pos.y);
+            rotate(this.rotation);
+            fill('pink');
+            rect(0, 0, this.width, this.height);
+            fill(0);
+            rect(0, -this.height / 3, 5, 8);
+            pop()
+        }
+        return testPolygonPolygon;
+    }
+
+
 }
 
 class MovingControls {
@@ -138,8 +144,4 @@ class MovingControls {
         this.right = right ?? this.right;
         this.down = down ?? this.down;
     }
-}
-
-function radiansToDegrees(radians: number) {
-    return radians * 180 / Math.PI;
 }

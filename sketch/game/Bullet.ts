@@ -3,7 +3,7 @@ class Bullet {
     public vel: p5.Vector;
     public lifespan: number;
 
-    private readonly speed = 2.45;
+    private readonly speed = 2.25;
     private readonly size = 5;
 
     constructor(public x: number, public y: number, public color: string, public rotation: number) {
@@ -25,18 +25,12 @@ class Bullet {
     }
 
     update() {
+        this.handleCollision(walls);
+        this.handleCollision(players);
+        this.pos.add(this.vel);
         this.show();
 
-        this.pos.add(this.vel);
-        if (this.isCollidingwithWall(walls)) {
-            console.log('colliding with wall');
-        }
-        if (this.isCollidingWithWall(walls, 'vertical')) {
-            this.vel.y *= -1;
-        }
-        if (this.isCollidingWithWall(walls, 'horizontal')) {
-            this.vel.x *= -1;
-        }
+
         this.lifespan -= 0.5;
         if (!this.isAlive()) {
             this.pop();
@@ -48,29 +42,34 @@ class Bullet {
     }
 
     pop() {
-        console.log('pop');
+        // this.vel.mult(0);
+        console.log("pop")
     }
 
+    private handleCollision(others: { isPolygonInside: (polygon: SAT.Polygon) => boolean }[]) {
 
-    private isCollidingWithWall(walls: Wall[], direction: 'horizontal' | 'vertical') {
-        return walls.some(wall => {
-            if (direction === 'horizontal') {
-                return wall.isPointInside(this.pos.x + this.size / 2, this.pos.y) || wall.isPointInside(this.pos.x - this.size / 2, this.pos.y);
-            }
-            if (direction === 'vertical') {
-                return wall.isPointInside(this.pos.x, this.pos.y + this.size / 2) || wall.isPointInside(this.pos.x, this.pos.y - this.size / 2);
-            }
+        others.forEach(other => {
+            if (other.isPolygonInside(this.getPolygon())) {
+                if (other instanceof Wall) {
+                    this.vel.mult(0);
+                }
 
+                if (other instanceof Tank) {
+                    console.log("hit tank")
+                }
+
+            }
         });
+
 
     }
 
-    private isCollidingwithWall(walls: Wall[]) {
-        return walls.some(wall => {
-            return wall.isPointInside(this.pos.x + this.size / 2, this.pos.y + this.size / 2) ||
-                wall.isPointInside(this.pos.x - this.size / 2, this.pos.y + this.size / 2) ||
-                wall.isPointInside(this.pos.x + this.size / 2, this.pos.y - this.size / 2) ||
-                wall.isPointInside(this.pos.x - this.size / 2, this.pos.y - this.size / 2);
-        });
+    public getPolygon():SAT.Polygon {
+        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.size / 2, this.pos.y - this.size / 2), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.size, 0),
+            new SAT.Vector(this.size, this.size),
+            new SAT.Vector(0, this.size)
+        ]);
     }
 }

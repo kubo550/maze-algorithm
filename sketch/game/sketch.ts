@@ -1,5 +1,3 @@
-// https://www.youtube.com/watch?v=sVcB8vUFlmU
-
 const CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
 const grid: Cell[] = [];
 const tileSize = 40;
@@ -7,13 +5,17 @@ let cols: number;
 let rows: number;
 let current: Cell;
 let walls: Wall[] = [];
+let bullets: Bullet[] = [];
 
-const stack: Cell[] = [];
+
+
+const players: Tank[] = [];
 
 let player: Tank;
 
-
 function createWallsOnMazeAlgorithm() {
+    const stack: Cell[] = [];
+
     while (true) {
         current.isVisited = true;
         let next = current.checkNeighbors();
@@ -59,6 +61,11 @@ function setup() {
 
     const {x, y} = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize);
     player = new Tank(x, y, 'red');
+    players.push(player);
+
+    const otherPlayer = new Tank(x, y, 'blue');
+    players.push(otherPlayer);
+
 }
 
 
@@ -66,7 +73,9 @@ function draw() {
     background(51);
 
     walls.forEach(wall => wall.show());
-    player.update();
+    players.forEach(player => player.update());
+    bullets.forEach(bullet => bullet.update());
+    bullets = bullets.filter(bullet => bullet.isAlive());
 }
 
 

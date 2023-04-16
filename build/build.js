@@ -4,7 +4,7 @@ var Bullet = (function () {
         this.y = y;
         this.color = color;
         this.rotation = rotation;
-        this.speed = 2.45;
+        this.speed = 2.25;
         this.size = 5;
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
@@ -21,17 +21,10 @@ var Bullet = (function () {
         pop();
     };
     Bullet.prototype.update = function () {
-        this.show();
+        this.handleCollision(walls);
+        this.handleCollision(players);
         this.pos.add(this.vel);
-        if (this.isCollidingwithWall(walls)) {
-            console.log('colliding with wall');
-        }
-        if (this.isCollidingWithWall(walls, 'vertical')) {
-            this.vel.y *= -1;
-        }
-        if (this.isCollidingWithWall(walls, 'horizontal')) {
-            this.vel.x *= -1;
-        }
+        this.show();
         this.lifespan -= 0.5;
         if (!this.isAlive()) {
             this.pop();
@@ -41,27 +34,28 @@ var Bullet = (function () {
         return this.lifespan >= 0;
     };
     Bullet.prototype.pop = function () {
-        console.log('pop');
+        console.log("pop");
     };
-    Bullet.prototype.isCollidingWithWall = function (walls, direction) {
+    Bullet.prototype.handleCollision = function (others) {
         var _this = this;
-        return walls.some(function (wall) {
-            if (direction === 'horizontal') {
-                return wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y) || wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y);
-            }
-            if (direction === 'vertical') {
-                return wall.isPointInside(_this.pos.x, _this.pos.y + _this.size / 2) || wall.isPointInside(_this.pos.x, _this.pos.y - _this.size / 2);
+        others.forEach(function (other) {
+            if (other.isPolygonInside(_this.getPolygon())) {
+                if (other instanceof Wall) {
+                    _this.vel.mult(0);
+                }
+                if (other instanceof Tank) {
+                    console.log("hit tank");
+                }
             }
         });
     };
-    Bullet.prototype.isCollidingwithWall = function (walls) {
-        var _this = this;
-        return walls.some(function (wall) {
-            return wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y + _this.size / 2) ||
-                wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y + _this.size / 2) ||
-                wall.isPointInside(_this.pos.x + _this.size / 2, _this.pos.y - _this.size / 2) ||
-                wall.isPointInside(_this.pos.x - _this.size / 2, _this.pos.y - _this.size / 2);
-        });
+    Bullet.prototype.getPolygon = function () {
+        return new SAT.Polygon(new SAT.Vector(this.pos.x - this.size / 2, this.pos.y - this.size / 2), [
+            new SAT.Vector(0, 0),
+            new SAT.Vector(this.size, 0),
+            new SAT.Vector(this.size, this.size),
+            new SAT.Vector(0, this.size)
+        ]);
     };
     return Bullet;
 }());
@@ -104,10 +98,9 @@ var Tank = (function () {
         this.movingController = new MovingControls();
         this.width = 15;
         this.height = 20;
-        this.rotation = 0;
-        this.bullets = [];
+        this.rotation = random(TWO_PI);
         this.particles = [];
-        this.bulletLimit = 10;
+        this.bulletLimit = 100;
     }
     Tank.prototype.update = function () {
         if (this.movingController.up) {
@@ -122,24 +115,17 @@ var Tank = (function () {
         if (this.movingController.right) {
             this.rotation += this.rotateSpeed;
         }
-        this.bullets.forEach(function (bullet) {
-            bullet.update();
-        });
         this.particles.forEach(function (particle) {
             particle.update();
         });
         this.checkWallCollision(walls);
-        this.bullets = this.bullets.filter(function (bullet) { return bullet.isAlive(); });
         this.particles = this.particles.filter(function (particle) { return particle.isAlive(); });
         this.show();
     };
     Tank.prototype.shoot = function () {
-        if (this.bullets.length < this.bulletLimit) {
-            this.bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+        if (bullets.length < this.bulletLimit) {
+            bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
-    };
-    Tank.prototype.isPointInside = function (x, y) {
-        return x > this.pos.x && x < this.pos.x + this.width && y > this.pos.y && y < this.pos.y + this.height;
     };
     Tank.prototype.checkWallCollision = function (walls) {
         var _this = this;
@@ -181,6 +167,22 @@ var Tank = (function () {
         var oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8));
         this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
     };
+    Tank.prototype.isPolygonInside = function (otherPolygon) {
+        var itsPolygon = this.getPolygon();
+        var testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+        if (testPolygonPolygon) {
+            push();
+            rectMode(CENTER);
+            translate(this.pos.x, this.pos.y);
+            rotate(this.rotation);
+            fill('pink');
+            rect(0, 0, this.width, this.height);
+            fill(0);
+            rect(0, -this.height / 3, 5, 8);
+            pop();
+        }
+        return testPolygonPolygon;
+    };
     return Tank;
 }());
 var MovingControls = (function () {
@@ -199,25 +201,24 @@ var MovingControls = (function () {
     };
     return MovingControls;
 }());
-function radiansToDegrees(radians) {
-    return radians * 180 / Math.PI;
-}
 function createWallsBasedOnGrid(grid) {
     var walls = [];
     grid.forEach(function (cell) {
         var x = cell.x * tileSize;
         var y = cell.y * tileSize;
+        var wallSize = 3;
+        var color = 'gray';
         if (cell.walls[0]) {
-            walls.push(new Wall(x, y, tileSize, 1, 'pink'));
+            walls.push(new Wall(x, y, tileSize, wallSize, color));
         }
         if (cell.walls[1]) {
-            walls.push(new Wall(x + tileSize, y, 1, tileSize, 'pink'));
+            walls.push(new Wall(x + tileSize, y, wallSize, tileSize, color));
         }
         if (cell.walls[2]) {
-            walls.push(new Wall(x, y + tileSize, tileSize, 1, 'pink'));
+            walls.push(new Wall(x, y + tileSize, tileSize, wallSize, color));
         }
         if (cell.walls[3]) {
-            walls.push(new Wall(x, y, 1, tileSize, 'pink'));
+            walls.push(new Wall(x, y, wallSize, tileSize, color));
         }
     });
     return walls;
@@ -237,16 +238,13 @@ var Wall = (function () {
         rect(this.x, this.y, this.width, this.height);
         pop();
     };
-    Wall.prototype.isPointInside = function (x, y) {
-        return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
-    };
     Wall.prototype.isPolygonInside = function (otherPolygon) {
         var itsPolygon = this.getPolygon();
         var testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
         if (testPolygonPolygon) {
             push();
             noStroke();
-            fill('red');
+            fill('pink');
             rect(this.x, this.y, this.width, this.height);
             pop();
         }
@@ -260,6 +258,9 @@ var Wall = (function () {
             new SAT.Vector(0, this.height),
         ]);
     };
+    Wall.prototype.toString = function () {
+        return 'wall';
+    };
     return Wall;
 }());
 var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
@@ -269,10 +270,12 @@ var cols;
 var rows;
 var current;
 var walls = [];
-var stack = [];
+var bullets = [];
+var players = [];
 var player;
 function createWallsOnMazeAlgorithm() {
     var _a;
+    var stack = [];
     while (true) {
         current.isVisited = true;
         var next = current.checkNeighbors();
@@ -310,11 +313,16 @@ function setup() {
     walls = createWallsOnMazeAlgorithm();
     var _a = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize), x = _a.x, y = _a.y;
     player = new Tank(x, y, 'red');
+    players.push(player);
+    var otherPlayer = new Tank(x, y, 'blue');
+    players.push(otherPlayer);
 }
 function draw() {
     background(51);
     walls.forEach(function (wall) { return wall.show(); });
-    player.update();
+    players.forEach(function (player) { return player.update(); });
+    bullets.forEach(function (bullet) { return bullet.update(); });
+    bullets = bullets.filter(function (bullet) { return bullet.isAlive(); });
 }
 function keyPressed() {
     if (keyCode === UP_ARROW) {
