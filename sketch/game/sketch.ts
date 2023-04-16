@@ -6,8 +6,7 @@ let rows: number;
 let current: Cell;
 let walls: Wall[] = [];
 let bullets: Bullet[] = [];
-
-
+let socket: io.Socket;
 
 const players: Tank[] = [];
 
@@ -15,6 +14,7 @@ let player: Tank;
 
 function createWallsOnMazeAlgorithm() {
     const stack: Cell[] = [];
+
 
     while (true) {
         current.isVisited = true;
@@ -38,6 +38,18 @@ function generateRandomPosition(CANVAS_WIDTH: number, CANVAS_HEIGHT: number, til
     return {x, y};
 
 }
+
+try {
+    socket = io.connect('http://localhost:8080');
+}
+catch (e) {
+    console.log('🚀 - Socket is not connected')
+}
+
+socket.on('connect', () => {
+    console.log('🚀 - Socket is connected')
+});
+
 
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");

@@ -271,6 +271,7 @@ var rows;
 var current;
 var walls = [];
 var bullets = [];
+var socket;
 var players = [];
 var player;
 function createWallsOnMazeAlgorithm() {
@@ -298,6 +299,15 @@ function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
     var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
     return { x: x, y: y };
 }
+try {
+    socket = io.connect('http://localhost:8080');
+}
+catch (e) {
+    console.log('🚀 - Socket is not connected');
+}
+socket.on('connect', function () {
+    console.log('🚀 - Socket is connected');
+});
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
