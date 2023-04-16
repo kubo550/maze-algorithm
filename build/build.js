@@ -1,21 +1,33 @@
 var grid = [];
-var tileSize = 20;
 var cols;
 var rows;
 var current;
+var isLooping = true;
 var stack = [];
+var canvasWidthSlider;
+var canvasHeightSlider;
+var tileSizeSlider;
+var frameRateSlider;
+var stopStartButton;
+var canvas;
 function setup() {
-    createCanvas(400, 400);
-    cols = width / tileSize;
-    rows = height / tileSize;
-    frameRate(1);
-    for (var y = 0; y < rows; y++) {
-        for (var x = 0; x < cols; x++) {
-            var cell = new Cell(x, y);
-            grid.push(cell);
-        }
-    }
-    current = grid[0];
+    canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
+    canvasHeightSlider = createSlider(40, windowHeight, 400, 10);
+    tileSizeSlider = createSlider(10, 100, 40, 10);
+    frameRateSlider = createSlider(1, 60, 15, 1);
+    stopStartButton = createButton("Stop");
+    restartCanvas();
+    frameRate(+frameRateSlider.value());
+}
+function stopLooping() {
+    stopStartButton.html("Start");
+    noLoop();
+    isLooping = false;
+}
+function startLooping() {
+    stopStartButton.html("Stop");
+    loop();
+    isLooping = true;
 }
 function draw() {
     var _a;
@@ -34,8 +46,28 @@ function draw() {
     }
     else {
         console.log("done");
-        console.log(grid);
     }
+    canvasWidthSlider.mouseClicked(function () { return restartCanvas(); });
+    canvasHeightSlider.mouseClicked(function () { return restartCanvas(); });
+    tileSizeSlider.mouseClicked(function () { return restartCanvas(); });
+    frameRateSlider.mouseClicked(function () { return frameRate(+frameRateSlider.value()); });
+    stopStartButton.mouseClicked(function () { return isLooping ? stopLooping() : startLooping(); });
+}
+function restartCanvas() {
+    console.log({ width: width, height: height, tileSize: +tileSizeSlider.value() });
+    startLooping();
+    canvas && canvas.remove();
+    canvas = createCanvas(+canvasWidthSlider.value(), +canvasHeightSlider.value());
+    cols = width / +tileSizeSlider.value();
+    rows = height / +tileSizeSlider.value();
+    grid.length = 0;
+    for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+            var cell = new Cell(x, y);
+            grid.push(cell);
+        }
+    }
+    current = grid[0];
 }
 var Cell = (function () {
     function Cell(x, y) {
@@ -45,30 +77,30 @@ var Cell = (function () {
         this.isVisited = false;
     }
     Cell.prototype.show = function () {
-        var x = this.x * tileSize;
-        var y = this.y * tileSize;
+        var x = this.x * +tileSizeSlider.value();
+        var y = this.y * +tileSizeSlider.value();
         stroke(255);
         if (this.walls[0]) {
-            line(x, y, x + tileSize, y);
+            line(x, y, x + +tileSizeSlider.value(), y);
         }
         if (this.walls[1]) {
-            line(x + tileSize, y, x + tileSize, y + tileSize);
+            line(x + +tileSizeSlider.value(), y, x + +tileSizeSlider.value(), y + +tileSizeSlider.value());
         }
         if (this.walls[2]) {
-            line(x + tileSize, y + tileSize, x, y + tileSize);
+            line(x + +tileSizeSlider.value(), y + +tileSizeSlider.value(), x, y + +tileSizeSlider.value());
         }
         if (this.walls[3]) {
-            line(x, y + tileSize, x, y);
+            line(x, y + +tileSizeSlider.value(), x, y);
         }
         if (this.isVisited) {
             noStroke();
             fill(255, 0, 255, 100);
-            rect(x, y, tileSize, tileSize);
+            rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
         if (this === current) {
             noStroke();
             fill(0, 255, 0, 100);
-            rect(x, y, tileSize, tileSize);
+            rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
     };
     Cell.prototype.checkNeighbors = function () {

@@ -9,33 +9,33 @@ class Cell {
     }
 
     show() {
-        const x = this.x * tileSize;
-        const y = this.y * tileSize;
+        const x = this.x * +tileSizeSlider.value();
+        const y = this.y * +tileSizeSlider.value();
         stroke(255);
 
         if (this.walls[0]) {
-            line(x, y, x + tileSize, y);
+            line(x, y, x + +tileSizeSlider.value(), y);
         }
         if (this.walls[1]) {
-            line(x + tileSize, y, x + tileSize, y + tileSize);
+            line(x + +tileSizeSlider.value(), y, x + +tileSizeSlider.value(), y + +tileSizeSlider.value());
         }
         if (this.walls[2]) {
-            line(x + tileSize, y + tileSize, x, y + tileSize);
+            line(x + +tileSizeSlider.value(), y + +tileSizeSlider.value(), x, y + +tileSizeSlider.value());
         }
         if (this.walls[3]) {
-            line(x, y + tileSize, x, y);
+            line(x, y + +tileSizeSlider.value(), x, y);
         }
 
         if (this.isVisited) {
             noStroke();
             fill(255, 0, 255, 100);
-            rect(x, y, tileSize, tileSize);
+            rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
 
         if (this === current) {
             noStroke();
             fill(0, 255, 0, 100);
-            rect(x, y, tileSize, tileSize);
+            rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
     }
 
