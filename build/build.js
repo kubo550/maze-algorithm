@@ -45,6 +45,7 @@ var Bullet = (function () {
                 }
                 if (other instanceof Tank) {
                     console.log("hit tank");
+                    _this.vel.mult(0);
                 }
             }
         });
@@ -103,6 +104,8 @@ var Tank = (function () {
         this.height = 20;
         this.particles = [];
         this.bulletLimit = 100;
+        this.barrelLength = 10;
+        this.isShooting = false;
     }
     Tank.prototype.update = function () {
         if (this.movingController.up) {
@@ -119,6 +122,10 @@ var Tank = (function () {
             this.rotation += this.rotateSpeed;
             this.emitMove();
         }
+        if (this.isShooting) {
+            this.showSmokeParticles();
+            this.barrelLength -= 0.5;
+        }
         this.particles.forEach(function (particle) {
             particle.update();
         });
@@ -127,8 +134,17 @@ var Tank = (function () {
         this.show();
     };
     Tank.prototype.shoot = function () {
-        if (bullets.length < this.bulletLimit) {
-            bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+        var _this = this;
+        if (bullets.length < this.bulletLimit && !this.isShooting) {
+            this.barrelLength = 20;
+            this.isShooting = true;
+            setTimeout(function () {
+                var positionBeforeTank = p5.Vector.fromAngle(_this.rotation - TWO_PI / 4).mult(_this.height / 2 + 7);
+                var position = p5.Vector.add(_this.pos, positionBeforeTank);
+                bullets.push(new Bullet(position.x, position.y, _this.color, _this.rotation));
+                _this.barrelLength = 10;
+                _this.isShooting = false;
+            }, 200);
         }
     };
     Tank.prototype.checkWallCollision = function (walls) {
@@ -151,7 +167,7 @@ var Tank = (function () {
         fill(this.color);
         rect(0, 0, this.width, this.height);
         fill(0);
-        rect(0, -this.height / 3, 5, 8);
+        rect(0, -this.height / 3, 5, this.barrelLength);
         pop();
     };
     Tank.prototype.moveForward = function (dir) {

@@ -56,6 +56,7 @@ class Bullet {
 
                 if (other instanceof Tank) {
                     console.log("hit tank")
+                    this.vel.mult(0);
                 }
 
             }

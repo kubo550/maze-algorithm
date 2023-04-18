@@ -15,6 +15,8 @@ class Tank {
     private readonly bulletLimit: number;
     private readonly rotateSpeed = 0.09;
     private readonly speed = 1.3;
+    private barrelLength: number;
+    private isShooting: boolean;
 
     constructor(public x: number, public y: number, public color: string, rotation: number, id: string, name: string) {
         this.pos = createVector(x, y);
@@ -29,6 +31,8 @@ class Tank {
         this.height = 20;
         this.particles = [];
         this.bulletLimit = 100;
+        this.barrelLength = 10;
+        this.isShooting = false;
     }
 
     update() {
@@ -47,6 +51,11 @@ class Tank {
             this.emitMove()
         }
 
+        if (this.isShooting)  {
+            this.showSmokeParticles();
+            this.barrelLength -= 0.5;
+        }
+
         this.particles.forEach(particle => {
             particle.update()
         });
@@ -59,8 +68,17 @@ class Tank {
     }
 
     shoot() {
-        if (bullets.length < this.bulletLimit) {
-            bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
+        if (bullets.length < this.bulletLimit && !this.isShooting) {
+            this.barrelLength = 20;
+            this.isShooting = true;
+            setTimeout(() => {
+                const positionBeforeTank = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.height / 2 + 7);
+                const position = p5.Vector.add(this.pos, positionBeforeTank);
+                bullets.push(new Bullet(position.x, position.y, this.color, this.rotation));
+                this.barrelLength = 10;
+                this.isShooting = false;
+            }, 200);
+
         }
     }
 
@@ -86,7 +104,7 @@ class Tank {
         fill(this.color);
         rect(0, 0, this.width, this.height);
         fill(0);
-        rect(0, -this.height / 3, 5, 8);
+        rect(0, -this.height / 3, 5, this.barrelLength);
         pop();
     }
 

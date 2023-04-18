@@ -8,6 +8,11 @@ let walls: Wall[] = [];
 let bullets: Bullet[] = [];
 let socket: io.Socket;
 
+
+type ServerWall = { x: number, y: number, width: number, height: number };
+type ServerTank = { color: string, rotation: number, name: string, id: string, position: { x: number, y: number } };
+
+
 let players = [] as Array<Tank>;
 
 let player: Tank;
@@ -43,10 +48,6 @@ function generateRandomPosition(CANVAS_WIDTH: number, CANVAS_HEIGHT: number, til
 function generateWallObjects(walls: { x: number; y: number; width: number; height: number }[]) {
     return walls.map(wall => new Wall(wall.x, wall.y , wall.width, wall.height, 'gray'));
 }
-
-type ServerWall = { "x": number, "y": number, "width": number, "height": number };
-
-type ServerTank = { color: string, rotation: number, name: string, id: string, position: { x: number, y: number }, bullets: any[] };
 
 function setupPlayers(players: ServerTank[]) {
     return players.map(player => new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name));
