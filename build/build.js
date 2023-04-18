@@ -87,7 +87,7 @@ var Particle = (function () {
     return Particle;
 }());
 var Tank = (function () {
-    function Tank(x, y, color) {
+    function Tank(x, y, color, rotation, id, name) {
         this.x = x;
         this.y = y;
         this.color = color;
@@ -96,9 +96,11 @@ var Tank = (function () {
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
         this.movingController = new MovingControls();
+        this.rotation = rotation;
+        this.id = id;
+        this.name = name;
         this.width = 15;
         this.height = 20;
-        this.rotation = random(TWO_PI);
         this.particles = [];
         this.bulletLimit = 100;
     }
@@ -111,9 +113,11 @@ var Tank = (function () {
         }
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
+            this.emitMove();
         }
         if (this.movingController.right) {
             this.rotation += this.rotateSpeed;
+            this.emitMove();
         }
         this.particles.forEach(function (particle) {
             particle.update();
@@ -154,6 +158,10 @@ var Tank = (function () {
         if (dir === void 0) { dir = 1; }
         this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
         this.pos.add(this.vel);
+        this.emitMove();
+    };
+    Tank.prototype.emitMove = function () {
+        socket.emit('playerMoved', { x: this.pos.x, y: this.pos.y, rotation: this.rotation, id: this.id });
     };
     Tank.prototype.getPolygon = function () {
         return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
@@ -182,6 +190,13 @@ var Tank = (function () {
             pop();
         }
         return testPolygonPolygon;
+    };
+    Tank.prototype.setPosition = function (pos, rotation) {
+        this.pos = createVector(pos.x, pos.y);
+        this.rotation = rotation;
+    };
+    Tank.prototype.emitShot = function () {
+        socket.emit('playerShoot', { id: this.id });
     };
     return Tank;
 }());
@@ -299,33 +314,46 @@ function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
     var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
     return { x: x, y: y };
 }
-try {
-    socket = io.connect('http://localhost:8080');
+function generateWallObjects(walls) {
+    return walls.map(function (wall) { return new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'); });
 }
-catch (e) {
-    console.log('🚀 - Socket is not connected');
+function setupPlayers(players) {
+    return players.map(function (player) { return new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name); });
 }
-socket.on('connect', function () {
-    console.log('🚀 - Socket is connected');
-});
 function setup() {
+    socket = io.connect('http://localhost:8080');
+    socket.on('connect', function () {
+        console.log('🚀 - Socket is connected');
+    });
     console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     cols = width / tileSize;
     rows = height / tileSize;
-    for (var y_1 = 0; y_1 < rows; y_1++) {
-        for (var x_1 = 0; x_1 < cols; x_1++) {
-            var cell = new Cell(x_1, y_1);
+    for (var y = 0; y < rows; y++) {
+        for (var x = 0; x < cols; x++) {
+            var cell = new Cell(x, y);
             grid.push(cell);
         }
     }
     current = random(grid);
     walls = createWallsOnMazeAlgorithm();
-    var _a = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize), x = _a.x, y = _a.y;
-    player = new Tank(x, y, 'red');
-    players.push(player);
-    var otherPlayer = new Tank(x, y, 'blue');
-    players.push(otherPlayer);
+    socket.on('initLevel', function (data) {
+        walls = generateWallObjects(data.walls);
+        players = setupPlayers(data.players);
+        player = players.find(function (p) { return p.id === socket.id; });
+    });
+    socket.on('playerMoved', function (data) {
+        var player = players.find(function (p) { return p.id === data.id; });
+        if (player) {
+            player.setPosition({ x: data.x, y: data.y }, data.rotation);
+        }
+    });
+    socket.on('playerShoot', function (data) {
+        var player = players.find(function (p) { return p.id === data.id; });
+        if (player) {
+            player.shoot();
+        }
+    });
 }
 function draw() {
     background(51);
@@ -348,6 +376,7 @@ function keyPressed() {
         player.movingController.setControls({ down: true });
     }
     if (keyCode === 32) {
+        player.emitShot();
         player.shoot();
     }
 }

@@ -7,6 +7,8 @@ class Tank {
     public width: number;
     public height: number;
     public rotation: number;
+    public readonly id: string;
+    private readonly name: string;
 
     public particles: Particle[];
 
@@ -14,15 +16,17 @@ class Tank {
     private readonly rotateSpeed = 0.09;
     private readonly speed = 1.3;
 
-    constructor(public x: number, public y: number, public color: string) {
+    constructor(public x: number, public y: number, public color: string, rotation: number, id: string, name: string) {
         this.pos = createVector(x, y);
         this.vel = createVector(0, 0);
 
         this.movingController = new MovingControls();
 
+        this.rotation = rotation
+        this.id = id;
+        this.name = name;
         this.width = 15;
         this.height = 20;
-        this.rotation = random(TWO_PI)
         this.particles = [];
         this.bulletLimit = 100;
     }
@@ -36,9 +40,11 @@ class Tank {
         }
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
+            this.emitMove()
         }
         if (this.movingController.right) {
             this.rotation += this.rotateSpeed;
+            this.emitMove()
         }
 
         this.particles.forEach(particle => {
@@ -53,7 +59,6 @@ class Tank {
     }
 
     shoot() {
-        // todo: this is a bug
         if (bullets.length < this.bulletLimit) {
             bullets.push(new Bullet(this.pos.x, this.pos.y, this.color, this.rotation));
         }
@@ -88,6 +93,11 @@ class Tank {
     private moveForward(dir = 1) {
         this.vel = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.speed * dir);
         this.pos.add(this.vel);
+        this.emitMove();
+    }
+
+    private emitMove() {
+        socket.emit('playerMoved', {x: this.pos.x, y: this.pos.y, rotation: this.rotation, id: this.id});
     }
 
     private getPolygon() {
@@ -108,7 +118,8 @@ class Tank {
         const itsPolygon = this.getPolygon();
 
         const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
-        if (testPolygonPolygon) {
+
+        if (testPolygonPolygon ) {
             push();
             rectMode(CENTER)
             translate(this.pos.x, this.pos.y);
@@ -122,7 +133,15 @@ class Tank {
         return testPolygonPolygon;
     }
 
+    public setPosition(pos: {x: number, y: number}, rotation: number) {
+        this.pos = createVector(pos.x, pos.y);
+        this.rotation = rotation;
+    }
 
+
+    public emitShot() {
+        socket.emit('playerShoot', {id: this.id});
+    }
 }
 
 class MovingControls {
@@ -144,4 +163,5 @@ class MovingControls {
         this.right = right ?? this.right;
         this.down = down ?? this.down;
     }
+
 }

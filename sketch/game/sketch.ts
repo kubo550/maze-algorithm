@@ -8,7 +8,7 @@ let walls: Wall[] = [];
 let bullets: Bullet[] = [];
 let socket: io.Socket;
 
-const players: Tank[] = [];
+let players = [] as Array<Tank>;
 
 let player: Tank;
 
@@ -39,19 +39,26 @@ function generateRandomPosition(CANVAS_WIDTH: number, CANVAS_HEIGHT: number, til
 
 }
 
-try {
-    socket = io.connect('http://localhost:8080');
-}
-catch (e) {
-    console.log('🚀 - Socket is not connected')
+
+function generateWallObjects(walls: { x: number; y: number; width: number; height: number }[]) {
+    return walls.map(wall => new Wall(wall.x, wall.y , wall.width, wall.height, 'gray'));
 }
 
-socket.on('connect', () => {
-    console.log('🚀 - Socket is connected')
-});
+type ServerWall = { "x": number, "y": number, "width": number, "height": number };
 
+type ServerTank = { color: string, rotation: number, name: string, id: string, position: { x: number, y: number }, bullets: any[] };
+
+function setupPlayers(players: ServerTank[]) {
+    return players.map(player => new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name));
+}
 
 function setup() {
+    socket = io.connect('http://localhost:8080');
+
+    socket.on('connect', () => {
+        console.log('🚀 - Socket is connected')
+    });
+
     console.log("🚀 - Setup initialized - P5 is running");
 
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -70,13 +77,31 @@ function setup() {
     current = random(grid);
     walls = createWallsOnMazeAlgorithm();
 
+    socket.on('initLevel', (data) => {
+        walls = generateWallObjects(data.walls as ServerWall[]);
+        players = setupPlayers(data.players as ServerTank[]);
+        player = players.find(p => p.id === socket.id);
+    });
 
-    const {x, y} = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize);
-    player = new Tank(x, y, 'red');
-    players.push(player);
+    // socket.on('newPlayer', (data) => {
+    //     const {x, y} = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize);
+    //     const newPlayer = new Tank(x, y, data.color);
+    //     players.push(newPlayer);
+    // });
 
-    const otherPlayer = new Tank(x, y, 'blue');
-    players.push(otherPlayer);
+    socket.on('playerMoved', (data) => {
+        const player = players.find(p => p.id === data.id);
+        if (player) {
+            player.setPosition({x: data.x, y: data.y}, data.rotation);
+        }
+    });
+
+    socket.on('playerShoot', (data) => {
+        const player = players.find(p => p.id === data.id);
+        if (player) {
+            player.shoot();
+        }
+    });
 
 }
 
@@ -105,6 +130,7 @@ function keyPressed() {
         player.movingController.setControls({down: true});
     }
     if (keyCode === 32) {
+        player.emitShot()
         player.shoot();
     }
 }
