@@ -34,7 +34,6 @@ class Bullet {
         if (!this.isAlive()) {
             this.pop();
         }
-        console.log('id of this bullet: ', this.id);
         socket.emit('bulletMoved', {position: {x: this.pos.x, y: this.pos.y}, id: this.id});
     }
 
@@ -55,8 +54,9 @@ class Bullet {
                 }
 
                 if (other instanceof Tank) {
-                    console.log("hit tank")
                     this.vel.mult(0);
+                    this.lifespan = 0;
+                    other.explode();
                 }
 
             }

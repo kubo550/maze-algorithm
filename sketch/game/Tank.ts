@@ -15,6 +15,7 @@ class Tank {
     private readonly speed = 1.3;
     private barrelLength: number;
     private isShooting: boolean;
+    public isAlive: boolean;
 
     constructor(public x: number, public y: number, public color: string, rotation: number, id: string, name: string) {
         this.pos = createVector(x, y);
@@ -31,6 +32,7 @@ class Tank {
         this.bulletLimit = 100;
         this.barrelLength = 10;
         this.isShooting = false;
+        this.isAlive = true;
     }
 
     update() {
@@ -105,18 +107,26 @@ class Tank {
 
         const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
 
-        if (testPolygonPolygon) {
-            push();
-            rectMode(CENTER)
-            translate(this.pos.x, this.pos.y);
-            rotate(this.rotation);
-            fill('pink');
-            rect(0, 0, this.width, this.height);
-            fill(0);
-            rect(0, -this.height / 3, 5, 8);
-            pop()
-        }
+        // if (testPolygonPolygon) {
+        //     push();
+        //     rectMode(CENTER)
+        //     translate(this.pos.x, this.pos.y);
+        //     rotate(this.rotation);
+        //     fill('pink');
+        //     rect(0, 0, this.width, this.height);
+        //     fill(0);
+        //     rect(0, -this.height / 3, 5, 8);
+        //     pop()
+        // }
         return testPolygonPolygon;
+    }
+
+    public explode() {
+        console.log('explode')
+        this.isAlive = false;
+        this.particles = [];
+        this.showTankExplosionParticles();
+
     }
 
     public setPosition(pos: { x: number, y: number }, rotation: number) {
@@ -129,7 +139,7 @@ class Tank {
         rectMode(CENTER)
         translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
-        fill(this.color);
+        fill(this.isAlive ? this.color : 'white');
         rect(0, 0, this.width, this.height);
         fill(0);
         rect(0, -this.height / 3, 5, this.barrelLength);
@@ -158,6 +168,17 @@ class Tank {
     private showSmokeParticles() {
         const oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8))
         this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
+    }
+
+    private showTankExplosionParticles() {
+        for (let i = 0; i < 100; i++) {
+            const randomDirectionVector = p5.Vector.fromAngle(random(TWO_PI)).mult(random(0.2, 1))
+            this.particles.push(new Particle(this.pos.copy(), randomDirectionVector));
+        }
+        for (let i = 0; i < 5; i++) {
+            const randomDirectionVector = p5.Vector.fromAngle(random(TWO_PI)).mult(random(0.3, 1))
+            this.particles.push(new TankExplosionParticle(this.pos.copy(), randomDirectionVector, this.color));
+        }
     }
 }
 

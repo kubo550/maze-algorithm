@@ -46,8 +46,9 @@ var Bullet = (function () {
                     _this.vel.mult(0);
                 }
                 if (other instanceof Tank) {
-                    console.log("hit tank");
                     _this.vel.mult(0);
+                    _this.lifespan = 0;
+                    other.explode();
                 }
             }
         });
@@ -65,6 +66,19 @@ var Bullet = (function () {
     };
     return Bullet;
 }());
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var Particle = (function () {
     function Particle(position, velocity) {
         this.pos = position;
@@ -78,6 +92,7 @@ var Particle = (function () {
         this.vel.add(this.acc);
         this.pos.add(this.vel);
         this.acc.mult(0);
+        this.vel.mult(0.98);
         this.life -= 5;
     };
     Particle.prototype.isAlive = function () {
@@ -92,6 +107,39 @@ var Particle = (function () {
     };
     return Particle;
 }());
+var TankExplosionParticle = (function (_super) {
+    __extends(TankExplosionParticle, _super);
+    function TankExplosionParticle(position, velocity, color) {
+        if (color === void 0) { color = "red"; }
+        var _this = _super.call(this, position, velocity) || this;
+        _this.color = color;
+        _this.total = random(5, 15);
+        _this.radius = random(1.5, 3.5);
+        _this.life = 1000;
+        _this.offset = [];
+        for (var i = 0; i < _this.total; i++) {
+            _this.offset[i] = random(-_this.radius * 0.5, _this.radius * 0.5);
+        }
+        return _this;
+    }
+    TankExplosionParticle.prototype.show = function () {
+        push();
+        stroke('black');
+        fill(this.color);
+        translate(this.pos.x, this.pos.y);
+        beginShape();
+        for (var i = 0; i < this.total; i++) {
+            var angle = map(i, 0, this.total, 0, TWO_PI);
+            var r = this.radius + this.offset[i];
+            var x = r * cos(angle);
+            var y = r * sin(angle);
+            vertex(x, y);
+        }
+        endShape(CLOSE);
+        pop();
+    };
+    return TankExplosionParticle;
+}(Particle));
 var Tank = (function () {
     function Tank(x, y, color, rotation, id, name) {
         this.x = x;
@@ -111,6 +159,7 @@ var Tank = (function () {
         this.bulletLimit = 100;
         this.barrelLength = 10;
         this.isShooting = false;
+        this.isAlive = true;
     }
     Tank.prototype.update = function () {
         if (this.movingController.up) {
@@ -171,18 +220,13 @@ var Tank = (function () {
     Tank.prototype.isPolygonInside = function (otherPolygon) {
         var itsPolygon = this.getPolygon();
         var testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
-        if (testPolygonPolygon) {
-            push();
-            rectMode(CENTER);
-            translate(this.pos.x, this.pos.y);
-            rotate(this.rotation);
-            fill('pink');
-            rect(0, 0, this.width, this.height);
-            fill(0);
-            rect(0, -this.height / 3, 5, 8);
-            pop();
-        }
         return testPolygonPolygon;
+    };
+    Tank.prototype.explode = function () {
+        console.log('explode');
+        this.isAlive = false;
+        this.particles = [];
+        this.showTankExplosionParticles();
     };
     Tank.prototype.setPosition = function (pos, rotation) {
         this.pos = createVector(pos.x, pos.y);
@@ -193,7 +237,7 @@ var Tank = (function () {
         rectMode(CENTER);
         translate(this.pos.x, this.pos.y);
         rotate(this.rotation);
-        fill(this.color);
+        fill(this.isAlive ? this.color : 'white');
         rect(0, 0, this.width, this.height);
         fill(0);
         rect(0, -this.height / 3, 5, this.barrelLength);
@@ -219,6 +263,16 @@ var Tank = (function () {
     Tank.prototype.showSmokeParticles = function () {
         var oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8));
         this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
+    };
+    Tank.prototype.showTankExplosionParticles = function () {
+        for (var i = 0; i < 100; i++) {
+            var randomDirectionVector = p5.Vector.fromAngle(random(TWO_PI)).mult(random(0.2, 1));
+            this.particles.push(new Particle(this.pos.copy(), randomDirectionVector));
+        }
+        for (var i = 0; i < 5; i++) {
+            var randomDirectionVector = p5.Vector.fromAngle(random(TWO_PI)).mult(random(0.3, 1));
+            this.particles.push(new TankExplosionParticle(this.pos.copy(), randomDirectionVector, this.color));
+        }
     };
     return Tank;
 }());
