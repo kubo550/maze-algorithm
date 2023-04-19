@@ -6,7 +6,7 @@ class Bullet {
     private readonly speed = 2.25;
     private readonly size = 5;
 
-    constructor(public x: number, public y: number, public color: string, public rotation: number) {
+    constructor(public readonly id: string, public x: number, public y: number, public color: string, public rotation: number) {
         this.pos = createVector(x, y);
         this.vel = p5.Vector.fromAngle(rotation - TWO_PI / 4).mult(this.speed);
         this.lifespan = 255;
@@ -30,11 +30,12 @@ class Bullet {
         this.pos.add(this.vel);
         this.show();
 
-
         this.lifespan -= 0.5;
         if (!this.isAlive()) {
             this.pop();
         }
+        console.log('id of this bullet: ', this.id);
+        socket.emit('bulletMoved', {position: {x: this.pos.x, y: this.pos.y}, id: this.id});
     }
 
     isAlive() {
@@ -42,7 +43,6 @@ class Bullet {
     }
 
     pop() {
-        // this.vel.mult(0);
         console.log("pop")
     }
 
@@ -72,5 +72,9 @@ class Bullet {
             new SAT.Vector(this.size, this.size),
             new SAT.Vector(0, this.size)
         ]);
+    }
+
+    public setPosition (pos: { x: number, y: number }) {
+        this.pos = createVector(pos.x, pos.y);
     }
 }

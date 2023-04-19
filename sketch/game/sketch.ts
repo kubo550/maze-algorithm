@@ -46,7 +46,7 @@ function generateRandomPosition(CANVAS_WIDTH: number, CANVAS_HEIGHT: number, til
 
 
 function generateWallObjects(walls: { x: number; y: number; width: number; height: number }[]) {
-    return walls.map(wall => new Wall(wall.x, wall.y , wall.width, wall.height, 'gray'));
+    return walls.map(wall => new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'));
 }
 
 function setupPlayers(players: ServerTank[]) {
@@ -98,9 +98,16 @@ function setup() {
     });
 
     socket.on('playerShoot', (data) => {
-        const player = players.find(p => p.id === data.id);
+        const player = players.find(p => p.id === data.playerId);
         if (player) {
-            player.shoot();
+            player.shoot({emitEvent: false, bulletId: data.id});
+        }
+    });
+
+    socket.on('bulletMoved', (data) => {
+        const bullet = bullets.find(b => b.id === data.id);
+        if (bullet) {
+            bullet.setPosition({x: data.position.x, y: data.position.y});
         }
     });
 
@@ -131,8 +138,7 @@ function keyPressed() {
         player.movingController.setControls({down: true});
     }
     if (keyCode === 32) {
-        player.emitShot()
-        player.shoot();
+        player.shoot({emitEvent: true});
     }
 }
 

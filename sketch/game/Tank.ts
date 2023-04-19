@@ -8,10 +8,8 @@ class Tank {
     public height: number;
     public rotation: number;
     public readonly id: string;
-    private readonly name: string;
-
     public particles: Particle[];
-
+    private readonly name: string;
     private readonly bulletLimit: number;
     private readonly rotateSpeed = 0.09;
     private readonly speed = 1.3;
@@ -51,7 +49,7 @@ class Tank {
             this.emitMove()
         }
 
-        if (this.isShooting)  {
+        if (this.isShooting) {
             this.showSmokeParticles();
             this.barrelLength -= 0.5;
         }
@@ -67,14 +65,20 @@ class Tank {
 
     }
 
-    shoot() {
+    shoot({emitEvent = true, bulletId}: { emitEvent?: boolean, bulletId?: string } = {}) {
         if (bullets.length < this.bulletLimit && !this.isShooting) {
             this.barrelLength = 20;
             this.isShooting = true;
+
+            const positionBeforeTank = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.height / 2 + 7);
+            const position = p5.Vector.add(this.pos, positionBeforeTank);
+            bulletId = bulletId || random(100000).toString();
+            const bullet = new Bullet(bulletId, position.x, position.y, this.color, this.rotation);
+            emitEvent && socket.emit('playerShoot', {id: bullet.id, position: {x: bullet.pos.x, y: bullet.pos.y}});
+
             setTimeout(() => {
-                const positionBeforeTank = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.height / 2 + 7);
-                const position = p5.Vector.add(this.pos, positionBeforeTank);
-                bullets.push(new Bullet(position.x, position.y, this.color, this.rotation));
+                bullets.push(bullet);
+
                 this.barrelLength = 10;
                 this.isShooting = false;
             }, 200);
@@ -94,6 +98,30 @@ class Tank {
                 }
             }
         });
+    }
+
+    public isPolygonInside(otherPolygon: SAT.Polygon) {
+        const itsPolygon = this.getPolygon();
+
+        const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+
+        if (testPolygonPolygon) {
+            push();
+            rectMode(CENTER)
+            translate(this.pos.x, this.pos.y);
+            rotate(this.rotation);
+            fill('pink');
+            rect(0, 0, this.width, this.height);
+            fill(0);
+            rect(0, -this.height / 3, 5, 8);
+            pop()
+        }
+        return testPolygonPolygon;
+    }
+
+    public setPosition(pos: { x: number, y: number }, rotation: number) {
+        this.pos = createVector(pos.x, pos.y);
+        this.rotation = rotation;
     }
 
     private show() {
@@ -121,7 +149,7 @@ class Tank {
     private getPolygon() {
         return new SAT.Polygon(new SAT.Vector(this.pos.x - this.width / 2, this.pos.y - this.height / 2), [
             new SAT.Vector(0, 0),
-            new SAT.Vector(this.width / 2 , 0),
+            new SAT.Vector(this.width / 2, 0),
             new SAT.Vector(this.width, this.height),
             new SAT.Vector(0, this.height),
         ]);
@@ -130,35 +158,6 @@ class Tank {
     private showSmokeParticles() {
         const oppositeDirectionVector = p5.Vector.fromAngle(random((this.rotation + PI / 2) - PI / 8, (this.rotation + PI / 2) + PI / 8))
         this.particles.push(new Particle(this.pos.copy(), oppositeDirectionVector));
-    }
-
-    public isPolygonInside(otherPolygon: SAT.Polygon) {
-        const itsPolygon = this.getPolygon();
-
-        const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
-
-        if (testPolygonPolygon ) {
-            push();
-            rectMode(CENTER)
-            translate(this.pos.x, this.pos.y);
-            rotate(this.rotation);
-            fill('pink');
-            rect(0, 0, this.width, this.height);
-            fill(0);
-            rect(0, -this.height / 3, 5, 8);
-            pop()
-        }
-        return testPolygonPolygon;
-    }
-
-    public setPosition(pos: {x: number, y: number}, rotation: number) {
-        this.pos = createVector(pos.x, pos.y);
-        this.rotation = rotation;
-    }
-
-
-    public emitShot() {
-        socket.emit('playerShoot', {id: this.id});
     }
 }
 
