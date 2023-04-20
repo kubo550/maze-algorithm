@@ -122,7 +122,6 @@ class Tank {
     }
 
     public explode() {
-        console.log('explode')
         this.isAlive = false;
         this.particles = [];
         this.showTankExplosionParticles();

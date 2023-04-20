@@ -41,9 +41,7 @@ class Bullet {
         return this.lifespan >= 0;
     }
 
-    pop() {
-        console.log("pop")
-    }
+    pop() {}
 
     private handleCollision(others: { isPolygonInside: (polygon: SAT.Polygon) => boolean }[]) {
 

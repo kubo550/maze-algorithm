@@ -35,9 +35,7 @@ var Bullet = (function () {
     Bullet.prototype.isAlive = function () {
         return this.lifespan >= 0;
     };
-    Bullet.prototype.pop = function () {
-        console.log("pop");
-    };
+    Bullet.prototype.pop = function () { };
     Bullet.prototype.handleCollision = function (others) {
         var _this = this;
         others.forEach(function (other) {
@@ -236,7 +234,6 @@ var Tank = (function () {
         return testPolygonPolygon;
     };
     Tank.prototype.explode = function () {
-        console.log('explode');
         this.isAlive = false;
         this.particles = [];
         this.showTankExplosionParticles();
@@ -376,59 +373,14 @@ var current;
 var walls = [];
 var bullets = [];
 var socket;
-var hostButton;
+var restartGameButton;
 var players = [];
 var player;
-function createWallsOnMazeAlgorithm() {
-    var _a;
-    var stack = [];
-    while (true) {
-        current.isVisited = true;
-        var next = current.checkNeighbors();
-        if (next) {
-            next.isVisited = true;
-            stack.push(current);
-            _a = removeWalls(current, next), current = _a[0], next = _a[1];
-            current = next;
-        }
-        else if (stack.length > 0) {
-            current = stack.pop();
-        }
-        else {
-            return createWallsBasedOnGrid(grid);
-        }
-    }
-}
-function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
-    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
-    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
-    return { x: x, y: y };
-}
-function generateWallObjects(walls) {
-    return walls.map(function (wall) { return new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'); });
-}
-function setupPlayers(players) {
-    return players.map(function (player) { return new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name); });
-}
-function handleHost(data) {
-    hostButton === null || hostButton === void 0 ? void 0 : hostButton.remove();
-    var isHost = data.isHost;
-    if (isHost) {
-        hostButton = createButton('Start Game');
-        hostButton.mousePressed(function () {
-            socket.emit('startGame');
-        });
-    }
-    else {
-        hostButton = createButton('Waiting for host to start game');
-    }
-}
 function setup() {
     socket = io.connect('http://localhost:8080');
     socket.on('connect', function () {
         console.log('🚀 - Socket is connected');
     });
-    console.log("🚀 - Setup initialized - P5 is running");
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     cols = width / tileSize;
     rows = height / tileSize;
@@ -438,18 +390,16 @@ function setup() {
             grid.push(cell);
         }
     }
+    restartGameButton = createButton('Restart Game');
+    restartGameButton.mousePressed(function () {
+        socket.emit('restartGame');
+    });
     current = random(grid);
     walls = createWallsOnMazeAlgorithm();
     socket.on('initLevel', function (data) {
         walls = generateWallObjects(data.walls);
         players = setupPlayers(data.players);
         player = players.find(function (p) { return p.id === socket.id; });
-    });
-    socket.on('newHost', function (data) {
-        handleHost(data);
-    });
-    socket.on('newPlayer', function (data) {
-        handleHost(data);
     });
     socket.on('playerMoved', function (data) {
         var player = players.find(function (p) { return p.id === data.id; });
@@ -507,6 +457,37 @@ function keyReleased() {
     if (keyCode === DOWN_ARROW) {
         player.movingController.setControls({ down: false });
     }
+}
+function createWallsOnMazeAlgorithm() {
+    var _a;
+    var stack = [];
+    while (true) {
+        current.isVisited = true;
+        var next = current.checkNeighbors();
+        if (next) {
+            next.isVisited = true;
+            stack.push(current);
+            _a = removeWalls(current, next), current = _a[0], next = _a[1];
+            current = next;
+        }
+        else if (stack.length > 0) {
+            current = stack.pop();
+        }
+        else {
+            return createWallsBasedOnGrid(grid);
+        }
+    }
+}
+function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
+    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
+    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
+    return { x: x, y: y };
+}
+function generateWallObjects(walls) {
+    return walls.map(function (wall) { return new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'); });
+}
+function setupPlayers(players) {
+    return players.map(function (player) { return new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name); });
 }
 var Cell = (function () {
     function Cell(x, y) {
