@@ -51,6 +51,7 @@ class Bullet {
             if (other.isPolygonInside(this.getPolygon())) {
                 if (other instanceof Wall) {
                     this.vel.mult(0);
+                    this.lifespan = 0;
                 }
 
                 if (other instanceof Tank) {

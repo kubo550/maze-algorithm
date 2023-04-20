@@ -9,13 +9,13 @@ class Tank {
     public rotation: number;
     public readonly id: string;
     public particles: Particle[];
+    public isAlive: boolean;
     private readonly name: string;
     private readonly bulletLimit: number;
     private readonly rotateSpeed = 0.09;
     private readonly speed = 1.3;
     private barrelLength: number;
     private isShooting: boolean;
-    public isAlive: boolean;
 
     constructor(public x: number, public y: number, public color: string, rotation: number, id: string, name: string) {
         this.pos = createVector(x, y);
@@ -78,8 +78,8 @@ class Tank {
             const bullet = new Bullet(bulletId, position.x, position.y, this.color, this.rotation);
             emitEvent && socket.emit('playerShoot', {id: bullet.id, position: {x: bullet.pos.x, y: bullet.pos.y}});
 
+            bullets.push(bullet);
             setTimeout(() => {
-                bullets.push(bullet);
 
                 this.barrelLength = 10;
                 this.isShooting = false;
@@ -92,7 +92,7 @@ class Tank {
         walls.forEach(wall => {
             if (wall.isPolygonInside(this.getPolygon())) {
                 this.pos.sub(this.vel);
-
+                this.emitMove();
                 this.rotation -= this.rotateSpeed / 2;
 
                 if (random() > 0.75) {
@@ -107,17 +107,17 @@ class Tank {
 
         const testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
 
-        // if (testPolygonPolygon) {
-        //     push();
-        //     rectMode(CENTER)
-        //     translate(this.pos.x, this.pos.y);
-        //     rotate(this.rotation);
-        //     fill('pink');
-        //     rect(0, 0, this.width, this.height);
-        //     fill(0);
-        //     rect(0, -this.height / 3, 5, 8);
-        //     pop()
-        // }
+        if (testPolygonPolygon) {
+            push();
+            rectMode(CENTER)
+            translate(this.pos.x, this.pos.y);
+            rotate(this.rotation);
+            fill('pink');
+            rect(0, 0, this.width, this.height);
+            fill(0);
+            rect(0, -this.height / 3, 5, 8);
+            pop()
+        }
         return testPolygonPolygon;
     }
 

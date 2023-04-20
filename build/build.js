@@ -44,6 +44,7 @@ var Bullet = (function () {
             if (other.isPolygonInside(_this.getPolygon())) {
                 if (other instanceof Wall) {
                     _this.vel.mult(0);
+                    _this.lifespan = 0;
                 }
                 if (other instanceof Tank) {
                     _this.vel.mult(0);
@@ -196,10 +197,10 @@ var Tank = (function () {
             var positionBeforeTank = p5.Vector.fromAngle(this.rotation - TWO_PI / 4).mult(this.height / 2 + 7);
             var position = p5.Vector.add(this.pos, positionBeforeTank);
             bulletId = bulletId || random(100000).toString();
-            var bullet_1 = new Bullet(bulletId, position.x, position.y, this.color, this.rotation);
-            emitEvent && socket.emit('playerShoot', { id: bullet_1.id, position: { x: bullet_1.pos.x, y: bullet_1.pos.y } });
+            var bullet = new Bullet(bulletId, position.x, position.y, this.color, this.rotation);
+            emitEvent && socket.emit('playerShoot', { id: bullet.id, position: { x: bullet.pos.x, y: bullet.pos.y } });
+            bullets.push(bullet);
             setTimeout(function () {
-                bullets.push(bullet_1);
                 _this.barrelLength = 10;
                 _this.isShooting = false;
             }, 200);
@@ -210,6 +211,7 @@ var Tank = (function () {
         walls.forEach(function (wall) {
             if (wall.isPolygonInside(_this.getPolygon())) {
                 _this.pos.sub(_this.vel);
+                _this.emitMove();
                 _this.rotation -= _this.rotateSpeed / 2;
                 if (random() > 0.75) {
                     _this.showSmokeParticles();
@@ -220,6 +222,17 @@ var Tank = (function () {
     Tank.prototype.isPolygonInside = function (otherPolygon) {
         var itsPolygon = this.getPolygon();
         var testPolygonPolygon = SAT.testPolygonPolygon(otherPolygon, itsPolygon);
+        if (testPolygonPolygon) {
+            push();
+            rectMode(CENTER);
+            translate(this.pos.x, this.pos.y);
+            rotate(this.rotation);
+            fill('pink');
+            rect(0, 0, this.width, this.height);
+            fill(0);
+            rect(0, -this.height / 3, 5, 8);
+            pop();
+        }
         return testPolygonPolygon;
     };
     Tank.prototype.explode = function () {
@@ -363,6 +376,7 @@ var current;
 var walls = [];
 var bullets = [];
 var socket;
+var hostButton;
 var players = [];
 var player;
 function createWallsOnMazeAlgorithm() {
@@ -396,6 +410,19 @@ function generateWallObjects(walls) {
 function setupPlayers(players) {
     return players.map(function (player) { return new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name); });
 }
+function handleHost(data) {
+    hostButton === null || hostButton === void 0 ? void 0 : hostButton.remove();
+    var isHost = data.isHost;
+    if (isHost) {
+        hostButton = createButton('Start Game');
+        hostButton.mousePressed(function () {
+            socket.emit('startGame');
+        });
+    }
+    else {
+        hostButton = createButton('Waiting for host to start game');
+    }
+}
 function setup() {
     socket = io.connect('http://localhost:8080');
     socket.on('connect', function () {
@@ -417,6 +444,12 @@ function setup() {
         walls = generateWallObjects(data.walls);
         players = setupPlayers(data.players);
         player = players.find(function (p) { return p.id === socket.id; });
+    });
+    socket.on('newHost', function (data) {
+        handleHost(data);
+    });
+    socket.on('newPlayer', function (data) {
+        handleHost(data);
     });
     socket.on('playerMoved', function (data) {
         var player = players.find(function (p) { return p.id === data.id; });

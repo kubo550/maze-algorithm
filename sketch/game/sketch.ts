@@ -7,10 +7,10 @@ let current: Cell;
 let walls: Wall[] = [];
 let bullets: Bullet[] = [];
 let socket: io.Socket;
-
+let hostButton: p5.Element;
 
 type ServerWall = { x: number, y: number, width: number, height: number };
-type ServerTank = { color: string, rotation: number, name: string, id: string, position: { x: number, y: number } };
+type ServerPlayer = { color: string, rotation: number, name: string, id: string, position: { x: number, y: number },isHost: boolean };
 
 
 let players = [] as Array<Tank>;
@@ -49,8 +49,21 @@ function generateWallObjects(walls: { x: number; y: number; width: number; heigh
     return walls.map(wall => new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'));
 }
 
-function setupPlayers(players: ServerTank[]) {
+function setupPlayers(players: ServerPlayer[]) {
     return players.map(player => new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name));
+}
+
+function handleHost(data: any) {
+    hostButton?.remove();
+    const isHost = data.isHost
+    if (isHost) {
+        hostButton = createButton('Start Game');
+        hostButton.mousePressed(() => {
+            socket.emit('startGame');
+        });
+    } else {
+        hostButton = createButton('Waiting for host to start game');
+    }
 }
 
 function setup() {
@@ -80,15 +93,18 @@ function setup() {
 
     socket.on('initLevel', (data) => {
         walls = generateWallObjects(data.walls as ServerWall[]);
-        players = setupPlayers(data.players as ServerTank[]);
+        players = setupPlayers(data.players as ServerPlayer[]);
         player = players.find(p => p.id === socket.id);
+
     });
 
-    // socket.on('newPlayer', (data) => {
-    //     const {x, y} = generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize);
-    //     const newPlayer = new Tank(x, y, data.color);
-    //     players.push(newPlayer);
-    // });
+    socket.on('newHost', (data) => {
+        handleHost(data);
+    })
+
+    socket.on('newPlayer', (data) => {
+        handleHost(data);
+    });
 
     socket.on('playerMoved', (data) => {
         const player = players.find(p => p.id === data.id);
