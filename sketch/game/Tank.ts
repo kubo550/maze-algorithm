@@ -45,16 +45,25 @@ class Tank {
         if (this.movingController.left) {
             this.rotation -= this.rotateSpeed;
             this.emitMove()
+            if (random() > 0.8) {
+                this.showSmokeParticles();
+            }
+
         }
         if (this.movingController.right) {
             this.rotation += this.rotateSpeed;
             this.emitMove()
+            if (random() > 0.8) {
+                this.showSmokeParticles();
+            }
+
         }
 
         if (this.isShooting) {
             this.showSmokeParticles();
             this.barrelLength -= 0.5;
         }
+
 
         this.particles.forEach(particle => {
             particle.update()
@@ -64,6 +73,7 @@ class Tank {
         this.particles = this.particles.filter(particle => particle.isAlive());
 
         this.show();
+        this.displayName();
 
     }
 
@@ -142,6 +152,16 @@ class Tank {
         rect(0, 0, this.width, this.height);
         fill(0);
         rect(0, -this.height / 3, 5, this.barrelLength);
+        pop();
+
+    }
+
+    private displayName() {
+        push();
+        fill(255);
+        textAlign(CENTER);
+        textSize(10)
+        text(this.name, this.pos.x, this.pos.y + this.height / 2 + 12);
         pop();
     }
 
