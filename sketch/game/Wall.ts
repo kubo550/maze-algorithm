@@ -1,26 +1,3 @@
-function createWallsBasedOnGrid(grid: Cell[]) {
-    const walls: Wall[] = [];
-    grid.forEach(cell => {
-        const x = cell.x * tileSize;
-        const y = cell.y * tileSize;
-        const wallSize = 3;
-        const color = 'gray';
-        if (cell.walls[0]) {
-            walls.push(new Wall(x, y, tileSize, wallSize, color));
-        }
-        if (cell.walls[1]) {
-            walls.push(new Wall(x + tileSize, y, wallSize, tileSize, color));
-        }
-        if (cell.walls[2]) {
-            walls.push(new Wall(x, y + tileSize, tileSize, wallSize, color));
-        }
-        if (cell.walls[3]) {
-            walls.push(new Wall(x, y, wallSize, tileSize, color));
-        }
-    });
-    return walls;
-}
-
 class Wall {
 
     constructor(public x: number, public y: number, public width: number, public height: number, public color: string) {

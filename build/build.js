@@ -317,28 +317,6 @@ var MovingControls = (function () {
     };
     return MovingControls;
 }());
-function createWallsBasedOnGrid(grid) {
-    var walls = [];
-    grid.forEach(function (cell) {
-        var x = cell.x * tileSize;
-        var y = cell.y * tileSize;
-        var wallSize = 3;
-        var color = 'gray';
-        if (cell.walls[0]) {
-            walls.push(new Wall(x, y, tileSize, wallSize, color));
-        }
-        if (cell.walls[1]) {
-            walls.push(new Wall(x + tileSize, y, wallSize, tileSize, color));
-        }
-        if (cell.walls[2]) {
-            walls.push(new Wall(x, y + tileSize, tileSize, wallSize, color));
-        }
-        if (cell.walls[3]) {
-            walls.push(new Wall(x, y, wallSize, tileSize, color));
-        }
-    });
-    return walls;
-}
 var Wall = (function () {
     function Wall(x, y, width, height, color) {
         this.x = x;
@@ -380,11 +358,6 @@ var Wall = (function () {
     return Wall;
 }());
 var CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
-var grid = [];
-var tileSize = 40;
-var cols;
-var rows;
-var current;
 var walls = [];
 var bullets = [];
 var socket;
@@ -397,22 +370,14 @@ function setup() {
         console.log('🚀 - Socket is connected');
     });
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-    cols = width / tileSize;
-    rows = height / tileSize;
-    for (var y = 0; y < rows; y++) {
-        for (var x = 0; x < cols; x++) {
-            var cell = new Cell(x, y);
-            grid.push(cell);
-        }
-    }
     restartGameButton = createButton('Restart Game');
     restartGameButton.mousePressed(function () {
         socket.emit('restartGame');
     });
-    current = random(grid);
-    walls = createWallsOnMazeAlgorithm();
     socket.on('initLevel', function (data) {
+        console.log(data.walls);
         walls = generateWallObjects(data.walls);
+        console.log(walls);
         players = setupPlayers(data.players);
         player = players.find(function (p) { return p.id === socket.id; });
     });
@@ -473,124 +438,10 @@ function keyReleased() {
         player.movingController.setControls({ down: false });
     }
 }
-function createWallsOnMazeAlgorithm() {
-    var _a;
-    var stack = [];
-    while (true) {
-        current.isVisited = true;
-        var next = current.checkNeighbors();
-        if (next) {
-            next.isVisited = true;
-            stack.push(current);
-            _a = removeWalls(current, next), current = _a[0], next = _a[1];
-            current = next;
-        }
-        else if (stack.length > 0) {
-            current = stack.pop();
-        }
-        else {
-            return createWallsBasedOnGrid(grid);
-        }
-    }
-}
-function generateRandomPosition(CANVAS_WIDTH, CANVAS_HEIGHT, tileSize) {
-    var x = (Math.floor(Math.random() * CANVAS_WIDTH / tileSize) * tileSize) + tileSize / 2;
-    var y = (Math.floor(Math.random() * CANVAS_HEIGHT / tileSize) * tileSize) + tileSize / 2;
-    return { x: x, y: y };
-}
 function generateWallObjects(walls) {
     return walls.map(function (wall) { return new Wall(wall.x, wall.y, wall.width, wall.height, 'gray'); });
 }
 function setupPlayers(players) {
     return players.map(function (player) { return new Tank(player.position.x, player.position.y, player.color, player.rotation, player.id, player.name); });
-}
-var Cell = (function () {
-    function Cell(x, y) {
-        this.x = x;
-        this.y = y;
-        this.walls = [true, true, true, true];
-        this.isVisited = false;
-    }
-    Cell.prototype.show = function () {
-        var x = this.x * tileSize;
-        var y = this.y * tileSize;
-        stroke(255);
-        if (this.walls[0]) {
-            line(x, y, x + tileSize, y);
-        }
-        if (this.walls[1]) {
-            line(x + tileSize, y, x + tileSize, y + tileSize);
-        }
-        if (this.walls[2]) {
-            line(x + tileSize, y + tileSize, x, y + tileSize);
-        }
-        if (this.walls[3]) {
-            line(x, y + tileSize, x, y);
-        }
-        if (this.isVisited) {
-            noStroke();
-            fill(255, 0, 255, 100);
-            rect(x, y, tileSize, tileSize);
-        }
-        if (this === current) {
-            noStroke();
-            fill(0, 255, 0, 100);
-            rect(x, y, tileSize, tileSize);
-        }
-    };
-    Cell.prototype.checkNeighbors = function () {
-        var neighbors = [];
-        var top = grid[index(this.x, this.y - 1)];
-        var right = grid[index(this.x + 1, this.y)];
-        var bottom = grid[index(this.x, this.y + 1)];
-        var left = grid[index(this.x - 1, this.y)];
-        if (top && !top.isVisited) {
-            neighbors.push(top);
-        }
-        if (right && !right.isVisited) {
-            neighbors.push(right);
-        }
-        if (bottom && !bottom.isVisited) {
-            neighbors.push(bottom);
-        }
-        if (left && !left.isVisited) {
-            neighbors.push(left);
-        }
-        if (neighbors.length > 0) {
-            var r = floor(random(0, neighbors.length));
-            return neighbors[r];
-        }
-        else {
-            return undefined;
-        }
-    };
-    return Cell;
-}());
-function index(x, y) {
-    if (x < 0 || y < 0 || x > cols - 1 || y > rows - 1) {
-        return -1;
-    }
-    return x + y * cols;
-}
-function removeWalls(current, next) {
-    var x = current.x - next.x;
-    if (x === 1) {
-        current.walls[3] = false;
-        next.walls[1] = false;
-    }
-    else if (x === -1) {
-        current.walls[1] = false;
-        next.walls[3] = false;
-    }
-    var y = current.y - next.y;
-    if (y === 1) {
-        current.walls[0] = false;
-        next.walls[2] = false;
-    }
-    else if (y === -1) {
-        current.walls[2] = false;
-        next.walls[0] = false;
-    }
-    return [current, next];
 }
 //# sourceMappingURL=build.js.map

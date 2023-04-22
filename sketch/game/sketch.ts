@@ -1,9 +1,4 @@
 const CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400;
-const grid: Cell[] = [];
-const tileSize = 40;
-let cols: number;
-let rows: number;
-let current: Cell;
 let walls: Wall[] = [];
 let bullets: Bullet[] = [];
 let socket: io.Socket;
@@ -25,16 +20,7 @@ function setup() {
 
 
     createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-    cols = width / tileSize;
-    rows = height / tileSize;
 
-
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            const cell = new Cell(x, y);
-            grid.push(cell);
-        }
-    }
 
     restartGameButton = createButton('Restart Game');
     restartGameButton.mousePressed(() => {
@@ -42,11 +28,10 @@ function setup() {
     });
 
 
-    current = random(grid);
-    walls = createWallsOnMazeAlgorithm();
-
     socket.on('initLevel', (data) => {
+        console.log(data.walls)
         walls = generateWallObjects(data.walls as ServerWall[]);
+        console.log(walls)
         players = setupPlayers(data.players as ServerPlayer[]);
         player = players.find(p => p.id === socket.id);
     });
