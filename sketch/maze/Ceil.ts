@@ -8,7 +8,7 @@ class Cell {
         this.isVisited = false;
     }
 
-    show({showCoords}: {showCoords: boolean}) {
+    show() {
         const x = this.x * +tileSizeSlider.value();
         const y = this.y * +tileSizeSlider.value();
         stroke(255);
@@ -38,7 +38,8 @@ class Cell {
             rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
 
-        if (showCoords) {
+        // @ts-ignore
+        if (showCoordsCheckbox.checked()) {
             push();
             noStroke();
             fill(255, 255, 255, 100);

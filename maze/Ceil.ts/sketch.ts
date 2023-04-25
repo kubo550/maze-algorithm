@@ -42,7 +42,7 @@ function readIfNotExist(key: string) {
 function setup() {
     stopStartButton = createButton("Stop");
     stackDiv = createDiv();
-    showCoordsCheckbox = createCheckbox("Show coords", false);
+    showCoordsCheckbox = createCheckbox("Show stack", false);
 
 
     createP("Canvas width");
@@ -54,7 +54,7 @@ function setup() {
     readIfNotExist("canvasHeight");
 
     createP("Tile size");
-    tileSizeSlider = createSlider(10, 100, 40, 10);
+    tileSizeSlider = createSlider(10, 150, 40, 5);
     readIfNotExist("tileSize");
 
     createP("Frame rate (FPS)");
@@ -93,10 +93,13 @@ function displayStackOnHTML(stack: Cell[]) {
 function draw() {
     background(51);
 
-    // @ts-ignore
-    grid.forEach(cell => cell.show({showCoords: showCoordsCheckbox.checked()}));
+    grid.forEach(cell => cell.show());
 
-    displayStackOnHTML(stack);
+    // @ts-ignore
+    if (showCoordsCheckbox.checked()) {
+        displayStackOnHTML(stack);
+
+    }
 
     current.isVisited = true;
     let next = current.checkNeighbors();

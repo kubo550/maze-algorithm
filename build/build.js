@@ -35,7 +35,7 @@ function readIfNotExist(key) {
 function setup() {
     stopStartButton = createButton("Stop");
     stackDiv = createDiv();
-    showCoordsCheckbox = createCheckbox("Show coords", false);
+    showCoordsCheckbox = createCheckbox("Show stack", false);
     createP("Canvas width");
     canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
     readIfNotExist("canvasWidth");
@@ -43,7 +43,7 @@ function setup() {
     canvasHeightSlider = createSlider(40, windowHeight, 400, 10);
     readIfNotExist("canvasHeight");
     createP("Tile size");
-    tileSizeSlider = createSlider(10, 100, 40, 10);
+    tileSizeSlider = createSlider(10, 150, 40, 5);
     readIfNotExist("tileSize");
     createP("Frame rate (FPS)");
     frameRateSlider = createSlider(1, 60, 15, 1);
@@ -72,8 +72,10 @@ function displayStackOnHTML(stack) {
 function draw() {
     var _a;
     background(51);
-    grid.forEach(function (cell) { return cell.show({ showCoords: showCoordsCheckbox.checked() }); });
-    displayStackOnHTML(stack);
+    grid.forEach(function (cell) { return cell.show(); });
+    if (showCoordsCheckbox.checked()) {
+        displayStackOnHTML(stack);
+    }
     current.isVisited = true;
     var next = current.checkNeighbors();
     if (next) {
@@ -123,8 +125,7 @@ var Cell = (function () {
         this.walls = [true, true, true, true];
         this.isVisited = false;
     }
-    Cell.prototype.show = function (_a) {
-        var showCoords = _a.showCoords;
+    Cell.prototype.show = function () {
         var x = this.x * +tileSizeSlider.value();
         var y = this.y * +tileSizeSlider.value();
         stroke(255);
@@ -150,7 +151,7 @@ var Cell = (function () {
             fill(0, 255, 0, 100);
             rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
         }
-        if (showCoords) {
+        if (showCoordsCheckbox.checked()) {
             push();
             noStroke();
             fill(255, 255, 255, 100);
