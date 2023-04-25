@@ -66,6 +66,10 @@ class Cell {
             return undefined;
         }
     }
+
+    toString() {
+        return `(${this.x}, ${this.y})`;
+    }
 }
 
 function index(x: number, y: number) {

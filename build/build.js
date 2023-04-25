@@ -10,12 +10,42 @@ var tileSizeSlider;
 var frameRateSlider;
 var stopStartButton;
 var canvas;
+var stackDiv;
+function keyPressed() {
+    if (key === " ") {
+        isLooping ? stopLooping() : startLooping();
+    }
+    if (key === "r") {
+        restartCanvas();
+    }
+    if (key === "s") {
+        saveCanvas(canvas, "maze", "png");
+    }
+    if (key === "c") {
+        localStorage.clear();
+    }
+}
+function readIfNotExist(key) {
+    var item = localStorage.getItem(key);
+    if (item) {
+        canvasWidthSlider.value(+item);
+    }
+}
 function setup() {
+    createP("Canvas width");
     canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
+    readIfNotExist("canvasWidth");
+    createP("Canvas height");
     canvasHeightSlider = createSlider(40, windowHeight, 400, 10);
+    readIfNotExist("canvasHeight");
+    createP("Tile size");
     tileSizeSlider = createSlider(10, 100, 40, 10);
+    readIfNotExist("tileSize");
+    createP("Frame rate (FPS)");
     frameRateSlider = createSlider(1, 60, 15, 1);
+    readIfNotExist("frameRate");
     stopStartButton = createButton("Stop");
+    stackDiv = createDiv();
     restartCanvas();
     frameRate(+frameRateSlider.value());
 }
@@ -29,10 +59,14 @@ function startLooping() {
     loop();
     isLooping = true;
 }
+function displayStackOnHTML(stack) {
+    stackDiv.html("STACK: " + stack.map(function (cell) { return cell.toString(); }).join(" -> "));
+}
 function draw() {
     var _a;
     background(51);
     grid.forEach(function (cell) { return cell.show(); });
+    displayStackOnHTML(stack);
     current.isVisited = true;
     var next = current.checkNeighbors();
     if (next) {
@@ -54,10 +88,16 @@ function draw() {
     stopStartButton.mouseClicked(function () { return isLooping ? stopLooping() : startLooping(); });
 }
 function restartCanvas() {
-    console.log({ width: width, height: height, tileSize: +tileSizeSlider.value() });
+    localStorage.setItem("canvasWidth", canvasWidthSlider.value().toString());
+    localStorage.setItem("canvasHeight", canvasHeightSlider.value().toString());
+    localStorage.setItem("tileSize", tileSizeSlider.value().toString());
+    localStorage.setItem("frameRate", frameRateSlider.value().toString());
+    stack.length = 0;
     startLooping();
     canvas && canvas.remove();
-    canvas = createCanvas(+canvasWidthSlider.value(), +canvasHeightSlider.value());
+    var canvasWidthPossibleToDivideByTileSize = Math.floor(+canvasWidthSlider.value() / +tileSizeSlider.value()) * +tileSizeSlider.value();
+    var canvasHeightPossibleToDivideByTileSize = Math.floor(+canvasHeightSlider.value() / +tileSizeSlider.value()) * +tileSizeSlider.value();
+    canvas = createCanvas(canvasWidthPossibleToDivideByTileSize, canvasHeightPossibleToDivideByTileSize);
     cols = width / +tileSizeSlider.value();
     rows = height / +tileSizeSlider.value();
     grid.length = 0;
@@ -128,6 +168,9 @@ var Cell = (function () {
         else {
             return undefined;
         }
+    };
+    Cell.prototype.toString = function () {
+        return "(" + this.x + ", " + this.y + ")";
     };
     return Cell;
 }());

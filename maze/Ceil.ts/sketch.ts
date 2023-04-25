@@ -12,14 +12,51 @@ let tileSizeSlider: p5.Element;
 let frameRateSlider: p5.Element;
 let stopStartButton: p5.Element;
 let canvas: p5.Renderer;
+let stackDiv: p5.Element;
 
+
+function keyPressed() {
+    if (key === " ") {
+        isLooping ? stopLooping() : startLooping();
+    }
+    if (key === "r") {
+        restartCanvas();
+    }
+    if (key === "s") {
+        saveCanvas(canvas, "maze", "png");
+    }
+    if (key === "c") {
+        localStorage.clear();
+    }
+}
+
+
+function readIfNotExist(key: string) {
+    const item = localStorage.getItem(key);
+    if (item) {
+        canvasWidthSlider.value(+item);
+    }
+}
 
 function setup() {
+    createP("Canvas width");
     canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
+    readIfNotExist("canvasWidth");
+
+    createP("Canvas height");
     canvasHeightSlider = createSlider(40, windowHeight, 400, 10);
+    readIfNotExist("canvasHeight");
+
+    createP("Tile size");
     tileSizeSlider = createSlider(10, 100, 40, 10);
+    readIfNotExist("tileSize");
+
+    createP("Frame rate (FPS)");
     frameRateSlider = createSlider(1, 60, 15, 1);
+    readIfNotExist("frameRate");
+
     stopStartButton = createButton("Stop");
+    stackDiv = createDiv();
 
     restartCanvas();
     frameRate(
@@ -40,10 +77,16 @@ function startLooping() {
     isLooping = true;
 }
 
+function displayStackOnHTML(stack: Cell[]) {
+    stackDiv.html("STACK: " + stack.map(cell => cell.toString()).join(" -> "));
+}
+
 function draw() {
     background(51);
 
     grid.forEach(cell => cell.show());
+
+    displayStackOnHTML(stack);
 
     current.isVisited = true;
     let next = current.checkNeighbors();
@@ -59,6 +102,7 @@ function draw() {
     }
 
     canvasWidthSlider.mouseClicked(() => restartCanvas());
+
     canvasHeightSlider.mouseClicked(() => restartCanvas());
     tileSizeSlider.mouseClicked(() => restartCanvas());
     frameRateSlider.mouseClicked(() => frameRate(+frameRateSlider.value()));
@@ -67,11 +111,18 @@ function draw() {
 
 
 function restartCanvas() {
-    console.log({width, height, tileSize: +tileSizeSlider.value()});
+    localStorage.setItem("canvasWidth", canvasWidthSlider.value().toString());
+    localStorage.setItem("canvasHeight", canvasHeightSlider.value().toString());
+    localStorage.setItem("tileSize", tileSizeSlider.value().toString());
+    localStorage.setItem("frameRate", frameRateSlider.value().toString());
+
+    stack.length = 0;
 
     startLooping();
     canvas && canvas.remove();
-    canvas = createCanvas(+canvasWidthSlider.value(), +canvasHeightSlider.value());
+    const canvasWidthPossibleToDivideByTileSize = Math.floor(+canvasWidthSlider.value() / +tileSizeSlider.value()) * +tileSizeSlider.value();
+    const canvasHeightPossibleToDivideByTileSize = Math.floor(+canvasHeightSlider.value() / +tileSizeSlider.value()) * +tileSizeSlider.value();
+    canvas = createCanvas(canvasWidthPossibleToDivideByTileSize, canvasHeightPossibleToDivideByTileSize);
 
     cols = width / +tileSizeSlider.value();
     rows = height / +tileSizeSlider.value();
