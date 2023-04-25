@@ -8,7 +8,7 @@
     "start-compile": "tsc --watch",
     "start-run": "browser-sync start --server -w"
   },
-  "homepage": "https://github.com/Gaweph/p5-typescript-starter#readme",
+  "homepage": "",
   "devDependencies": {
     "@types/p5": "^1.3.3",
     "browser-sync": "^2.26.12",

@@ -44,6 +44,11 @@ function setup() {
     createP("Frame rate (FPS)");
     frameRateSlider = createSlider(1, 60, 15, 1);
     readIfNotExist("frameRate");
+    createElement('br');
+    createP('r -> Restart canvas');
+    createP('s -> Save canvas as png');
+    createP('space -> stop / start');
+    createElement('br');
     stopStartButton = createButton("Stop");
     stackDiv = createDiv();
     restartCanvas();
