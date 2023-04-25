@@ -11,6 +11,7 @@ var frameRateSlider;
 var stopStartButton;
 var canvas;
 var stackDiv;
+var showCoordsCheckbox;
 function keyPressed() {
     if (key === " ") {
         isLooping ? stopLooping() : startLooping();
@@ -32,6 +33,9 @@ function readIfNotExist(key) {
     }
 }
 function setup() {
+    stopStartButton = createButton("Stop");
+    stackDiv = createDiv();
+    showCoordsCheckbox = createCheckbox("Show coords", false);
     createP("Canvas width");
     canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
     readIfNotExist("canvasWidth");
@@ -49,8 +53,6 @@ function setup() {
     createP('s -> Save canvas as png');
     createP('space -> stop / start');
     createElement('br');
-    stopStartButton = createButton("Stop");
-    stackDiv = createDiv();
     restartCanvas();
     frameRate(+frameRateSlider.value());
 }
@@ -70,7 +72,7 @@ function displayStackOnHTML(stack) {
 function draw() {
     var _a;
     background(51);
-    grid.forEach(function (cell) { return cell.show(); });
+    grid.forEach(function (cell) { return cell.show({ showCoords: showCoordsCheckbox.checked() }); });
     displayStackOnHTML(stack);
     current.isVisited = true;
     var next = current.checkNeighbors();
@@ -121,7 +123,8 @@ var Cell = (function () {
         this.walls = [true, true, true, true];
         this.isVisited = false;
     }
-    Cell.prototype.show = function () {
+    Cell.prototype.show = function (_a) {
+        var showCoords = _a.showCoords;
         var x = this.x * +tileSizeSlider.value();
         var y = this.y * +tileSizeSlider.value();
         stroke(255);
@@ -146,6 +149,14 @@ var Cell = (function () {
             noStroke();
             fill(0, 255, 0, 100);
             rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
+        }
+        if (showCoords) {
+            push();
+            noStroke();
+            fill(255, 255, 255, 100);
+            textSize(+tileSizeSlider.value() / 3);
+            text(this.x + ", " + this.y, x + +tileSizeSlider.value() / 4, y + +tileSizeSlider.value() / 2);
+            pop();
         }
     };
     Cell.prototype.checkNeighbors = function () {

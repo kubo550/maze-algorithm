@@ -8,7 +8,7 @@ class Cell {
         this.isVisited = false;
     }
 
-    show() {
+    show({showCoords}: {showCoords: boolean}) {
         const x = this.x * +tileSizeSlider.value();
         const y = this.y * +tileSizeSlider.value();
         stroke(255);
@@ -36,6 +36,15 @@ class Cell {
             noStroke();
             fill(0, 255, 0, 100);
             rect(x, y, +tileSizeSlider.value(), +tileSizeSlider.value());
+        }
+
+        if (showCoords) {
+            push();
+            noStroke();
+            fill(255, 255, 255, 100);
+            textSize(+tileSizeSlider.value() / 3);
+            text(`${this.x}, ${this.y}`, x + +tileSizeSlider.value() / 4, y + +tileSizeSlider.value() / 2);
+            pop()
         }
     }
 

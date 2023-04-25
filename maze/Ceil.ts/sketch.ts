@@ -13,6 +13,7 @@ let frameRateSlider: p5.Element;
 let stopStartButton: p5.Element;
 let canvas: p5.Renderer;
 let stackDiv: p5.Element;
+let showCoordsCheckbox: p5.Element;
 
 
 function keyPressed() {
@@ -39,6 +40,11 @@ function readIfNotExist(key: string) {
 }
 
 function setup() {
+    stopStartButton = createButton("Stop");
+    stackDiv = createDiv();
+    showCoordsCheckbox = createCheckbox("Show coords", false);
+
+
     createP("Canvas width");
     canvasWidthSlider = createSlider(40, windowWidth, 400, 10);
     readIfNotExist("canvasWidth");
@@ -60,10 +66,6 @@ function setup() {
     createP('s -> Save canvas as png')
     createP('space -> stop / start')
     createElement('br')
-
-    stopStartButton = createButton("Stop");
-    stackDiv = createDiv();
-
 
     restartCanvas();
     frameRate(
@@ -91,7 +93,8 @@ function displayStackOnHTML(stack: Cell[]) {
 function draw() {
     background(51);
 
-    grid.forEach(cell => cell.show());
+    // @ts-ignore
+    grid.forEach(cell => cell.show({showCoords: showCoordsCheckbox.checked()}));
 
     displayStackOnHTML(stack);
 
